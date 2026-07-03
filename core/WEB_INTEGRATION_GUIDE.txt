@@ -1,0 +1,842 @@
+СПРАВОЧНИК ПО ИНТЕГРАЦИИ CORE В ВЕБ-ПРИЛОЖЕНИЕ
+================================================
+
+Назначение документа
+--------------------
+
+Этот файл предназначен для разработчика, который будет подключать
+вычислительное ядро TrajectoryVisualizer к будущему веб-приложению.
+
+Core является самостоятельной Python-библиотекой. Он не знает о веб-сервере,
+HTML, JavaScript, Plotly, Cesium и других интерфейсных технологиях.
+Веб-приложение должно использовать Core только через Python-импорты и
+преобразовывать результаты Core в формат, удобный для API или интерфейса.
+
+
+Главный принцип интеграции
+-------------------------
+
+Вся работа с инженерными данными должна начинаться с DataLoader.
+
+После загрузки файла остальные части приложения должны работать только
+с объектом Dataset. Интерфейсный слой не должен самостоятельно разбирать CSV,
+TXT, TSV или DAT, если это относится к расчетным данным проекта.
+
+Типовой поток работы:
+
+1. Пользователь выбирает файл.
+2. Веб-слой передает путь к файлу в DataLoader.
+3. DataLoader возвращает Dataset.
+4. Dataset регистрируется в DatasetManager.
+5. VariableManager регистрирует переменные из Dataset.
+6. DatasetValidator проверяет Dataset и возвращает сообщения.
+7. Statistics рассчитывает числовые характеристики.
+8. GraphManager, TableManager, CesiumManager и AnimationManager хранят только
+   описания будущего отображения.
+
+
+Рекомендуемый импорт
+--------------------
+
+Для внешнего кода рекомендуется импортировать классы из пакета Core:
+
+    from Core import (
+        DataLoader,
+        DatasetManager,
+        VariableManager,
+        DatasetValidator,
+        Statistics,
+        GraphManager,
+        GraphDescription,
+        CurveDescription,
+        TableManager,
+        TableDescription,
+        CesiumManager,
+        SceneObjectDescription,
+        AnimationManager,
+        AnimationDescription,
+        ExportManager,
+        ExportTask,
+        ProjectManager,
+        Workspace,
+        Config,
+        PluginManager,
+        Logger,
+    )
+
+Прямой импорт из отдельных файлов тоже возможен, но общий импорт из Core
+удобнее для веб-слоя и уменьшает связность с внутренним расположением модулей.
+
+
+DataLoader и Dataset
+--------------------
+
+Модуль: data_loader.py
+
+Основные классы:
+
+- DataLoader
+- Dataset
+
+Назначение DataLoader:
+
+- загрузка TXT, CSV, TSV, DAT;
+- автоматическое определение кодировки;
+- автоматическое определение разделителя;
+- игнорирование комментариев и пустых строк;
+- разбор заголовков;
+- выделение единиц измерения;
+- переименование повторяющихся имен столбцов;
+- преобразование числовых данных в NumPy;
+- использование кэша при повторной загрузке того же файла.
+
+DataLoader не должен:
+
+- строить графики;
+- сортировать данные;
+- интерполировать данные;
+- удалять NaN;
+- исправлять файл;
+- выполнять визуализацию.
+
+Пример:
+
+    loader = DataLoader()
+    dataset = loader.load("data/trajectory.csv")
+
+Важные поля Dataset:
+
+- dataset.identifier - уникальный идентификатор набора данных;
+- dataset.name - имя набора данных;
+- dataset.data - числовые данные NumPy;
+- dataset.column_names - имена всех столбцов;
+- dataset.argument_name - имя первого столбца, то есть аргумента;
+- dataset.variable_names - имена всех переменных без аргумента;
+- dataset.units - словарь единиц измерения;
+- dataset.source_path - путь к исходному файлу;
+- dataset.metadata - служебная информация загрузки.
+
+Пример получения столбца:
+
+    height = dataset.get_column("h")
+
+Отсутствующие единицы измерения не являются ошибкой. В этом случае в
+dataset.units для соответствующего столбца будет None.
+
+
+FileDetector
+------------
+
+Модуль: file_detector.py
+
+Основные классы:
+
+- FileDetector
+- FileInfo
+
+Назначение:
+
+- определить тип файла по расширению;
+- определить кодировку;
+- определить разделитель.
+
+Обычно веб-слою не нужно вызывать FileDetector напрямую. Его использует
+DataLoader. Прямой вызов полезен, если интерфейсу нужно заранее показать
+пользователю информацию о файле.
+
+Пример:
+
+    detector = FileDetector()
+    info = detector.detect("data/trajectory.csv")
+
+Важные поля FileInfo:
+
+- info.path;
+- info.file_type;
+- info.encoding;
+- info.delimiter.
+
+
+DatasetManager
+--------------
+
+Модуль: dataset_manager.py
+
+Основной класс:
+
+- DatasetManager
+
+Назначение:
+
+- регистрация Dataset;
+- удаление Dataset;
+- получение Dataset по идентификатору;
+- поиск Dataset по имени;
+- получение списка всех Dataset.
+
+Пример:
+
+    dataset_manager = DatasetManager()
+    dataset_id = dataset_manager.register(dataset)
+    same_dataset = dataset_manager.get(dataset_id)
+    all_datasets = dataset_manager.list()
+
+DatasetManager не валидирует данные и не рассчитывает статистику. Он только
+хранит объекты Dataset.
+
+
+VariableManager
+---------------
+
+Модуль: variable_manager.py
+
+Основные классы:
+
+- VariableManager
+- VariableRef
+
+Назначение:
+
+- хранить все переменные проекта в одном месте;
+- создавать имена вида Dataset.Variable;
+- удалять переменные при удалении Dataset.
+
+Пример:
+
+    variable_manager = VariableManager()
+    variables = variable_manager.register_dataset(dataset)
+
+VariableRef содержит:
+
+- full_name;
+- dataset_id;
+- dataset_name;
+- variable_name;
+- unit.
+
+Веб-слой может использовать VariableManager для построения списка переменных
+в боковой панели, выпадающих списках графиков и настройках таблиц.
+
+
+DatasetValidator
+----------------
+
+Модуль: validators.py
+
+Основные классы:
+
+- DatasetValidator
+- ValidationResult
+- ValidationMessage
+- Severity
+
+Назначение:
+
+- проверка пустого файла;
+- проверка отсутствия заголовков;
+- проверка повторяющихся столбцов;
+- проверка NaN;
+- проверка Inf;
+- проверка нечисловых значений;
+- проверка немонотонного аргумента;
+- проверка отсутствия аргумента;
+- проверка строк с неожиданным количеством столбцов.
+
+Валидатор не изменяет Dataset. Он только формирует сообщения.
+
+Пример:
+
+    validator = DatasetValidator()
+    result = validator.validate(dataset)
+
+    if not result.is_valid:
+        for message in result.messages:
+            print(message.severity, message.code, message.message)
+
+В веб-приложении вместо print нужно преобразовать messages в JSON-ответ или
+внутреннюю модель уведомлений.
+
+
+Statistics
+----------
+
+Модуль: statistics.py
+
+Основные классы:
+
+- Statistics
+- DatasetStatistics
+- ColumnStatistics
+
+Назначение:
+
+- минимум;
+- максимум;
+- среднее;
+- RMS;
+- стандартное отклонение;
+- количество NaN;
+- количество Inf;
+- количество строк;
+- количество столбцов.
+
+Пример:
+
+    stats = Statistics().calculate(dataset)
+    height_stats = stats.columns["h"]
+
+ColumnStatistics содержит:
+
+- name;
+- minimum;
+- maximum;
+- mean;
+- rms;
+- standard_deviation;
+- nan_count;
+- inf_count.
+
+Statistics игнорирует NaN и Inf при расчете min, max, mean, RMS и стандартного
+отклонения, но отдельно считает их количество.
+
+
+Units
+-----
+
+Модуль: units.py
+
+Основные классы:
+
+- UnitParser
+- UnitName
+
+Назначение:
+
+- разобрать заголовок вида "Height [m]";
+- выделить имя переменной;
+- выделить единицу измерения.
+
+Пример:
+
+    parsed = UnitParser().parse("Velocity [m/s]")
+    name = parsed.name
+    unit = parsed.unit
+
+Если единица отсутствует:
+
+    parsed = UnitParser().parse("Height")
+    parsed.unit будет None
+
+Обычно UnitParser используется внутри DataLoader. Веб-слой может использовать
+его для предварительного разбора пользовательских имен переменных.
+
+
+GraphManager
+------------
+
+Модуль: graph_manager.py
+
+Основные классы:
+
+- GraphManager
+- GraphDescription
+- CurveDescription
+
+Назначение:
+
+- хранить описания графиков;
+- хранить список кривых;
+- хранить выбранные переменные;
+- хранить цвета, легенды и оси.
+
+GraphManager не строит графики и не зависит от Plotly.
+
+Пример:
+
+    curve = CurveDescription(
+        dataset_id=dataset_id,
+        x_variable="h",
+        y_variable="Vx",
+        color="red",
+        legend="Vx(h)",
+        axis="left",
+    )
+
+    graph = GraphDescription(
+        title="Скорость по высоте",
+        curves=[curve],
+    )
+
+    graph_id = graph_manager.create(graph)
+
+Веб-слой должен сам преобразовать GraphDescription в формат конкретной
+библиотеки визуализации.
+
+
+TableManager
+------------
+
+Модуль: table_manager.py
+
+Основные классы:
+
+- TableManager
+- TableDescription
+
+Назначение:
+
+- хранить описание открытых таблиц;
+- хранить выбранный Dataset;
+- хранить список отображаемых столбцов.
+
+TableManager не работает с GUI и не форматирует HTML-таблицы.
+
+Пример:
+
+    table = TableDescription(
+        dataset_id=dataset_id,
+        columns=["h", "Vx", "Vy"],
+        title="Траектория",
+    )
+
+    table_id = table_manager.create(table)
+
+
+CesiumManager
+-------------
+
+Модуль: cesium_manager.py
+
+Основные классы:
+
+- CesiumManager
+- SceneObjectDescription
+
+Назначение:
+
+- хранить описания объектов сцены;
+- хранить траектории;
+- хранить орбиты;
+- хранить точки;
+- хранить маркеры;
+- хранить полилинии.
+
+CesiumManager не импортирует и не использует Cesium.
+
+Пример:
+
+    scene_object = SceneObjectDescription(
+        object_type="trajectory",
+        name="Основная траектория",
+        dataset_id=dataset_id,
+        properties={
+            "x": "x",
+            "y": "y",
+            "z": "z",
+            "color": "yellow",
+        },
+    )
+
+    object_id = cesium_manager.add(scene_object)
+
+Веб-слой должен преобразовать SceneObjectDescription в команды или JSON для
+клиентской 3D-сцены.
+
+
+AnimationManager
+----------------
+
+Модуль: animation_manager.py
+
+Основные классы:
+
+- AnimationManager
+- AnimationDescription
+- PlaybackState
+
+Назначение:
+
+- хранить описания анимаций;
+- хранить скорость воспроизведения;
+- хранить текущее время;
+- хранить режим воспроизведения;
+- хранить состояние воспроизведения.
+
+AnimationManager не выполняет визуализацию и не запускает таймеры интерфейса.
+
+Пример:
+
+    animation = AnimationDescription(
+        name="Полет",
+        dataset_id=dataset_id,
+        speed=1.0,
+        current_time=0.0,
+        mode="once",
+        state=PlaybackState.STOPPED,
+    )
+
+    animation_id = animation_manager.create(animation)
+
+
+ExportManager
+-------------
+
+Модуль: export_manager.py
+
+Основные классы:
+
+- ExportManager
+- ExportTask
+
+Назначение:
+
+- хранить описание будущей операции экспорта;
+- хранить тип экспорта;
+- хранить путь назначения;
+- хранить источник экспорта;
+- хранить дополнительные параметры.
+
+ExportManager пока не экспортирует файлы.
+
+Пример:
+
+    task = ExportTask(
+        export_type="csv",
+        target_path="output/result.csv",
+        source_id=dataset_id,
+        options={"delimiter": ","},
+    )
+
+    export_id = export_manager.register(task)
+
+
+ProjectManager и Project
+------------------------
+
+Модуль: project_manager.py
+
+Основные классы:
+
+- ProjectManager
+- Project
+
+Назначение ProjectManager:
+
+- создать проект;
+- открыть проект;
+- сохранить проект;
+- закрыть проект.
+
+Project хранит:
+
+- имя проекта;
+- рабочее пространство;
+- список Dataset;
+- описания графиков;
+- описания таблиц;
+- описания объектов сцены;
+- описания анимаций;
+- настройки.
+
+Пример:
+
+    project_manager = ProjectManager()
+    project = project_manager.create("DemoProject", root_path="projects/demo")
+    project.datasets.append(dataset_id)
+    project_manager.save("projects/demo/project.json")
+
+    opened_project = project_manager.open("projects/demo/project.json")
+    project_manager.close()
+
+Важно: ProjectManager сохраняет состояние проекта, но не является заменой
+DataLoader. Если проект хранит путь к файлу данных, повторная загрузка должна
+проходить через DataLoader.
+
+
+Workspace
+---------
+
+Модуль: workspace.py
+
+Основной класс:
+
+- Workspace
+
+Назначение:
+
+- хранить состояние текущего проекта;
+- хранить путь рабочей области;
+- хранить идентификаторы открытых Dataset;
+- хранить идентификаторы графиков;
+- хранить идентификаторы таблиц;
+- хранить идентификаторы объектов сцены;
+- хранить идентификаторы анимаций;
+- хранить настройки рабочего пространства.
+
+Пример:
+
+    workspace = Workspace(root_path="projects/demo")
+    workspace.dataset_ids.append(dataset_id)
+    workspace.graph_ids.append(graph_id)
+
+Метод clear() сбрасывает состояние рабочего пространства.
+
+
+Config
+------
+
+Модуль: config.py
+
+Основной класс:
+
+- Config
+
+Назначение:
+
+- чтение настроек приложения;
+- запись настроек приложения;
+- хранение настроек в JSON.
+
+Пример:
+
+    config = Config("config/settings.json")
+    config.load()
+    config.set("language", "ru")
+    config.save()
+
+    language = config.get("language", "ru")
+
+Config подходит для настроек приложения, но не должен использоваться как
+замена ProjectManager.
+
+
+PluginManager
+-------------
+
+Модуль: plugin_manager.py
+
+Основные классы:
+
+- PluginManager
+- PluginDescription
+
+Назначение:
+
+- обнаруживать плагины;
+- читать plugin.json;
+- хранить метаданные плагинов.
+
+PluginManager не выполняет код плагинов.
+
+Пример:
+
+    plugin_manager = PluginManager("plugins")
+    plugins = plugin_manager.discover()
+
+    for plugin in plugins:
+        name = plugin.name
+        metadata = plugin.metadata
+
+Ожидаемый формат расположения:
+
+    plugins/
+        demo_plugin/
+            plugin.json
+
+
+Logger
+------
+
+Модуль: logger.py
+
+Основной класс:
+
+- Logger
+
+Назначение:
+
+- единая точка журналирования;
+- поддержка INFO, WARNING, ERROR, DEBUG;
+- запрет на использование print внутри Core.
+
+Пример:
+
+    logger = Logger()
+    logger.info("Файл загружен")
+    logger.warning("Найдены предупреждения в данных")
+    logger.error("Ошибка загрузки")
+    logger.debug("Подробности диагностики")
+
+Веб-слой может передать свой Logger в классы, которые принимают его в
+конструкторе, например DataLoader или ProjectManager.
+
+
+Cache
+-----
+
+Модуль: cache.py
+
+Основные классы:
+
+- FileCache
+- CacheKey
+
+Назначение:
+
+- не читать повторно файл, если он уже был загружен;
+- учитывать путь, размер файла и время изменения.
+
+Обычно FileCache используется внутри DataLoader. Прямое использование
+понадобится только если веб-приложение будет управлять временем жизни кэша.
+
+Пример:
+
+    cache = FileCache()
+    loader = DataLoader(cache=cache)
+
+    dataset_1 = loader.load("data.csv")
+    dataset_2 = loader.load("data.csv")
+
+    dataset_1 is dataset_2 будет True, если файл не изменился.
+
+
+Utils
+-----
+
+Модуль: utils.py
+
+Функции:
+
+- make_identifier(prefix);
+- normalize_path(path);
+- make_unique_names(names).
+
+Назначение:
+
+- небольшие технические операции;
+- генерация идентификаторов;
+- нормализация путей;
+- создание уникальных имен.
+
+В utils нельзя переносить бизнес-логику. Если в веб-слое возникает желание
+использовать utils для сложной операции, скорее всего для этой операции нужен
+отдельный класс или модуль.
+
+
+Пример полного сценария загрузки файла
+--------------------------------------
+
+    loader = DataLoader()
+    dataset_manager = DatasetManager()
+    variable_manager = VariableManager()
+    validator = DatasetValidator()
+    statistics = Statistics()
+
+    dataset = loader.load("data/trajectory.csv")
+    dataset_id = dataset_manager.register(dataset)
+    variables = variable_manager.register_dataset(dataset)
+    validation = validator.validate(dataset)
+    stats = statistics.calculate(dataset)
+
+    response = {
+        "dataset_id": dataset_id,
+        "name": dataset.name,
+        "columns": dataset.column_names,
+        "variables": [variable.full_name for variable in variables],
+        "is_valid": validation.is_valid,
+        "messages": [
+            {
+                "severity": message.severity,
+                "code": message.code,
+                "message": message.message,
+            }
+            for message in validation.messages
+        ],
+        "rows": stats.row_count,
+        "columns_count": stats.column_count,
+    }
+
+Этот response является примером для веб-слоя. Core сам такие JSON-ответы не
+создает, потому что не должен знать о протоколе API.
+
+
+Рекомендации для веб-разработчика
+---------------------------------
+
+1. Не добавлять зависимости от веб-фреймворков внутрь Core.
+2. Не импортировать Plotly, Cesium, HTML, CSS или JavaScript в Core.
+3. Не использовать pandas.DataFrame как внутреннее представление данных Core.
+4. Не изменять Dataset в валидаторах и статистике.
+5. Не исправлять данные молча. Ошибки и предупреждения должны идти через
+   ValidationMessage.
+6. Не хранить состояние интерфейса в Dataset.
+7. Не смешивать описание визуализации и саму визуализацию.
+8. Любые данные из файла загружать только через DataLoader.
+9. Для пользовательских сообщений использовать Logger или сообщения
+   валидатора, а не print.
+10. При добавлении нового функционала сохранять принцип: один класс -
+    одна ответственность.
+
+
+Карта модулей Core
+------------------
+
+__init__.py
+    Публичный экспорт основных классов Core.
+
+animation_manager.py
+    Описания анимаций и состояние воспроизведения.
+
+cache.py
+    Кэширование загруженных файлов.
+
+cesium_manager.py
+    Описания объектов 3D-сцены без зависимости от Cesium.
+
+config.py
+    Чтение и запись настроек приложения.
+
+data_loader.py
+    Загрузка файлов и создание Dataset.
+
+dataset_manager.py
+    Хранение Dataset.
+
+export_manager.py
+    Описания будущих операций экспорта.
+
+file_detector.py
+    Определение типа файла, кодировки и разделителя.
+
+graph_manager.py
+    Описания графиков и кривых.
+
+logger.py
+    Единая система журналирования.
+
+plugin_manager.py
+    Обнаружение плагинов и чтение их описаний.
+
+project_manager.py
+    Создание, открытие, сохранение и закрытие проектов.
+
+statistics.py
+    Расчет статистики по Dataset.
+
+table_manager.py
+    Описания открытых таблиц.
+
+units.py
+    Разбор единиц измерения из заголовков.
+
+utils.py
+    Малые вспомогательные функции.
+
+validators.py
+    Проверка корректности Dataset.
+
+variable_manager.py
+    Реестр переменных проекта.
+
+workspace.py
+    Состояние рабочего пространства проекта.

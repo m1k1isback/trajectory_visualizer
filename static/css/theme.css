@@ -1,0 +1,27 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1e1e1e;
+    color: #cccccc;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-size: 13px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.placeholder {
+    color: #858585;
+    font-style: italic;
+}
+
+.panel-divider {
+    border: none;
+    border-top: 1px solid #3c3c3c;
+    margin: 10px 0;
+}

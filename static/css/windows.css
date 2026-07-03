@@ -1,0 +1,82 @@
+.main-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.scene-container {
+    flex: 1;
+    display: grid;
+    gap: 2px;
+    background-color: #1e1e1e;
+    padding: 2px;
+}
+
+.scene-window {
+    background-color: #1e1e1e;
+    border: 1px solid #3c3c3c;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 150px;
+}
+
+.scene-window.closed {
+    display: none;
+}
+
+.window-header {
+    background-color: #2d2d2d;
+    padding: 5px 10px;
+    border-bottom: 1px solid #3c3c3c;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.window-title {
+    color: #cccccc;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.window-close {
+    background: none;
+    border: none;
+    color: #858585;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 4px;
+    border-radius: 2px;
+}
+
+.window-close:hover {
+    background-color: #e81123;
+    color: #ffffff;
+}
+
+.window-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1e1e1e;
+}
+
+.window-placeholder {
+    color: #858585;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.cesium-container {
+    background-color: #000000;
+}
+
+.cesium-placeholder {
+    color: #858585;
+    font-size: 16px;
+    letter-spacing: 2px;
+}

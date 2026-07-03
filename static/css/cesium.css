@@ -1,0 +1,9 @@
+.cesium-container {
+    background-color: #000000;
+}
+
+.cesium-placeholder {
+    color: #858585;
+    font-size: 16px;
+    letter-spacing: 2px;
+}
