@@ -19,9 +19,15 @@
         <div class="menu-dropdown">
             <button class="toolbar-btn">Файл</button>
             <div class="dropdown-content">
-                <a href="#" class="dropdown-item"><span>Открыть файл...</span><span class="shortcut">Ctrl+O</span></a>
+                <a href="#" class="dropdown-item" onclick="document.getElementById('file-input').click(); return false;">
+                    <span>Открыть файл...</span>
+                    <span class="shortcut">Ctrl+O</span>
+                </a>
                 <div class="dropdown-divider"></div>
-                <a href="#" class="dropdown-item"><span>Сохранить проект</span><span class="shortcut">Ctrl+S</span></a>
+                <a href="#" class="dropdown-item">
+                    <span>Сохранить проект</span>
+                    <span class="shortcut">Ctrl+S</span>
+                </a>
                 <a href="#" class="dropdown-item"><span>Сохранить как...</span></a>
                 <div class="dropdown-divider"></div>
                 <a href="#" class="dropdown-item"><span>Выход</span></a>
@@ -63,14 +69,14 @@
             
             <div class="panel-widget">
                 <div class="widget-header">Структура файлов</div>
-                <div class="widget-content">
+                <div class="widget-content" id="file-structure-widget">
                     <p>Столбцы:<br><span class="placeholder">(нет загруженных файлов)</span></p>
                 </div>
             </div>
             
             <div class="panel-widget">
                 <div class="widget-header">Свойства файла</div>
-                <div class="widget-content">
+                <div class="widget-content" id="file-properties-widget">
                     <p><span class="placeholder">(нет данных)</span></p>
                 </div>
             </div>
@@ -180,10 +186,14 @@
         <span>Ready</span>
     </div>
 
-    <!-- Подключение JavaScript (обновлённые пути) -->
+    <!-- Скрытый input для выбора файла -->
+    <input type="file" id="file-input" accept=".csv,.txt,.dat,.tsv" style="display: none;">
+
+    <!-- Подключение JavaScript -->
     <script src="../static/js/widgets/SidebarManager.js"></script>
     <script src="../static/js/widgets/TabManager.js"></script>
     <script src="../static/js/core/WindowManager.js"></script>
+    <script src="../static/js/widgets/FileLoader.js"></script>
     
 </body>
 </html>
