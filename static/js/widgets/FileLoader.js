@@ -1,5 +1,8 @@
 // FileLoader.js - Загрузка файлов на сервер через /api/upload
 
+// Глобальная переменная для хранения последнего dataset_id
+window.currentDatasetId = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('file-input');
     
@@ -30,9 +33,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const result = await response.json();
             
+            // СОХРАНЯЕМ dataset_id глобально
+            window.currentDatasetId = result.dataset_id;
+            
             log('Файл "' + result.name + '" загружен: ' + result.row_count + ' строк, ' + result.column_count + ' столбцов');
             log('  Аргумент (X): ' + result.argument_name);
             log('  Переменных (Y): ' + result.variable_names.length);
+            log('  Dataset ID: ' + result.dataset_id);
             
             // Обновляем интерфейс
             updateFileStructure(result);
@@ -45,12 +52,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error(error);
         }
         
-        // Сбрасываем input чтобы можно было загрузить тот же файл снова
         fileInput.value = '';
     });
 });
-
-// === Функции обновления интерфейса ===
 
 function updateFileStructure(result) {
     const widget = document.getElementById('file-structure-widget');
@@ -58,11 +62,16 @@ function updateFileStructure(result) {
     
     let html = '<p><strong>Файл:</strong> ' + result.name + '</p>';
     html += '<p><strong>Аргумент (X):</strong> ' + result.argument_name + '</p>';
-    html += '<p><strong>Переменные (Y):</strong></p>';
+    html += '<p><strong>Переменные (Y):</strong> <span style="color:#858585;font-size:11px;">(клик — добавить на график)</span></p>';
     html += '<ul style="margin: 5px 0; padding-left: 20px; list-style: none;">';
     result.variable_names.forEach(function(varName) {
         const unit = result.units && result.units[varName] ? ' [' + result.units[varName] + ']' : '';
-        html += '<li style="color: #cccccc; font-size: 12px;">• ' + varName + unit + '</li>';
+        html += '<li style="color: #cccccc; font-size: 12px; cursor: pointer; padding: 2px 4px;" ' +
+                    'onclick="PlotManager.drawInFirstWindow(\'' + result.dataset_id + '\', null, [\'' + varName + '\'])" ' +
+                    'onmouseover="this.style.backgroundColor=\'#2d2d2d\'" ' +
+                    'onmouseout="this.style.backgroundColor=\'transparent\'">' +
+                    '• ' + varName + unit +
+                 '</li>';
     });
     html += '</ul>';
     
@@ -116,14 +125,12 @@ function updateDataTable(result) {
     
     let html = '<table style="width: 100%; border-collapse: collapse; font-size: 11px;">';
     
-    // Заголовки
     html += '<tr style="border-bottom: 1px solid #3c3c3c;">';
     result.column_names.forEach(function(col) {
         html += '<th style="padding: 6px; text-align: left; color: #cccccc;">' + col + '</th>';
     });
     html += '</tr>';
     
-    // Данные (первые 50 строк для примера)
     result.data_sample.forEach(function(row) {
         html += '<tr style="border-bottom: 1px solid #2d2d2d;">';
         row.forEach(function(cell) {
@@ -139,8 +146,6 @@ function updateDataTable(result) {
     
     tableTab.innerHTML = html;
 }
-
-// === Вспомогательные функции ===
 
 function log(message, type) {
     if (window.TabManager && TabManager.logToConsole) {
@@ -165,7 +170,6 @@ function formatBytes(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
 }
 
-// Экспорт для использования из других модулей
 window.FileLoader = {
     updateFileStructure: updateFileStructure,
     updateFileProperties: updateFileProperties,

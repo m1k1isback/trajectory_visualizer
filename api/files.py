@@ -4,16 +4,28 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from pathlib import Path
 import tempfile
 import os
-import numpy as np
+import math
 
 router = APIRouter()
+
+
+def sanitize_value(value):
+    """Заменить NaN/Inf на None для корректной JSON сериализации."""
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+    return value
+
+
+def sanitize_row(row):
+    """Очистить строку данных от NaN/Inf."""
+    return [sanitize_value(v) for v in row]
+
 
 @router.post("/api/upload")
 async def upload_file(request: Request, file: UploadFile = File(...)):
     """
     Загрузить файл траектории.
-    Возвращает: dataset_id, имена столбцов, количество строк, статистику,
-    единицы измерения и первые 50 строк данных для таблицы.
     """
     data_loader = request.app.state.data_loader
     dataset_manager = request.app.state.dataset_manager
@@ -23,32 +35,21 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     
     tmp_path = None
     try:
-        # Сохраняем файл во временную папку
         with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = Path(tmp.name)
         
-        # Загружаем через ядро
         dataset = data_loader.load(tmp_path)
-        
-        # Регистрируем в менеджере
         dataset_id = dataset_manager.register(dataset)
-        
-        # Регистрируем переменные
         variable_manager.register_dataset(dataset)
-        
-        # Проверяем данные
         validation = validator.validate(dataset)
-        
-        # Считаем статистику
         stats = statistics_calc.calculate(dataset)
         
         # Берём первые 50 строк для превью таблицы
         max_rows = min(50, dataset.row_count)
-        data_sample = dataset.data[:max_rows].tolist()
+        data_sample = [sanitize_row(row) for row in dataset.data[:max_rows].tolist()]
         
-        # Формируем ответ
         response = {
             "dataset_id": dataset_id,
             "name": dataset.name,

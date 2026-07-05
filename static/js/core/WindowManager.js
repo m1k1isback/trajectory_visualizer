@@ -1,56 +1,74 @@
-// WindowManager.js
+// WindowManager.js - Управление окнами сцены
 
 function closeWindow(windowId) {
-    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
     if (windowElement) {
         windowElement.classList.add('closed');
         
         if (window.TabManager) {
-            TabManager.logToConsole(`Окно "График ${windowId}" закрыто`);
+            TabManager.logToConsole('Окно "График ' + windowId + '" закрыто');
         }
         
         updateSceneLayout();
     }
 }
 
+function clearWindow(windowId) {
+    const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
+    if (!windowElement) return;
+    
+    const content = windowElement.querySelector('.window-content');
+    if (!content) return;
+    
+    const isCesium = windowElement.classList.contains('window-cesium');
+    
+    if (isCesium) {
+        content.innerHTML = '<div class="cesium-placeholder">Cesium Viewer</div>';
+    } else {
+        content.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
+    }
+    
+    if (window.TabManager) {
+        TabManager.logToConsole('Окно "График ' + windowId + '" очищено');
+    }
+}
+
 function updateSceneLayout() {
     const container = document.getElementById('scene-container');
+    if (!container) return;
+    
     const allWindows = container.querySelectorAll('.scene-window');
     const visibleWindows = container.querySelectorAll('.scene-window:not(.closed)');
     const count = visibleWindows.length;
     
-    // Сбрасываем все стили grid
-    allWindows.forEach(w => {
+    allWindows.forEach(function(w) {
         w.style.gridColumn = '';
         w.style.gridRow = '';
     });
     
-    // Пересчитываем layout
     if (count === 4) {
-        // 2x2 сетка
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr 1fr';
         
-        // Модель Земли в правом нижнем углу
         const cesium = document.querySelector('[data-window-id="cesium"]');
         if (cesium) {
             cesium.style.gridColumn = '2';
             cesium.style.gridRow = '2';
         }
     } else if (count === 3) {
-        // Одно окно растягивается на 2 колонки
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr 1fr';
         
         const visibleArray = Array.from(visibleWindows);
         const cesium = document.querySelector('[data-window-id="cesium"]');
-        const graphs = visibleArray.filter(w => w.dataset.windowId !== 'cesium');
+        const graphs = visibleArray.filter(function(w) {
+            return w.dataset.windowId !== 'cesium';
+        });
         
         if (cesium && !cesium.classList.contains('closed')) {
             cesium.style.gridColumn = '2';
             cesium.style.gridRow = '2';
             
-            // Первый график растягивается на всю ширину
             if (graphs[0]) {
                 graphs[0].style.gridColumn = '1 / 3';
                 graphs[0].style.gridRow = '1';
@@ -61,17 +79,15 @@ function updateSceneLayout() {
             }
         }
     } else if (count === 2) {
-        // Два окна по половине
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr';
         
         const visibleArray = Array.from(visibleWindows);
-        visibleArray.forEach((w, index) => {
+        visibleArray.forEach(function(w, index) {
             w.style.gridColumn = (index + 1).toString();
             w.style.gridRow = '1';
         });
     } else if (count === 1) {
-        // Одно окно на весь экран
         container.style.gridTemplateColumns = '1fr';
         container.style.gridTemplateRows = '1fr';
         
@@ -83,9 +99,11 @@ function updateSceneLayout() {
 
 window.WindowManager = {
     closeWindow: closeWindow,
+    clearWindow: clearWindow,
     updateSceneLayout: updateSceneLayout
 };
 
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     updateSceneLayout();
 });

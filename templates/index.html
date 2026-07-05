@@ -40,6 +40,10 @@
                 <a href="#" class="dropdown-item"><span>Новый 2D график...</span></a>
                 <a href="#" class="dropdown-item"><span>Новый 3D график...</span></a>
                 <a href="#" class="dropdown-item"><span>Траектория на карте</span></a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" onclick="PlotManager.clearAll(); return false;">
+                    <span>Очистить все графики</span>
+                </a>
             </div>
         </div>
         
@@ -93,7 +97,10 @@
             <div class="scene-window" data-window-id="1">
                 <div class="window-header">
                     <span class="window-title">График 1</span>
-                    <button class="window-close" onclick="closeWindow(1)" title="Закрыть">×</button>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="window-close" onclick="PlotManager.clearWindow(1)" title="Очистить">🗑</button>
+                        <button class="window-close" onclick="closeWindow(1)" title="Закрыть">×</button>
+                    </div>
                 </div>
                 <div class="window-content">
                     <div class="window-placeholder">2D/3D визуализация</div>
@@ -103,7 +110,10 @@
             <div class="scene-window" data-window-id="2">
                 <div class="window-header">
                     <span class="window-title">График 2</span>
-                    <button class="window-close" onclick="closeWindow(2)" title="Закрыть">×</button>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="window-close" onclick="PlotManager.clearWindow(2)" title="Очистить">🗑</button>
+                        <button class="window-close" onclick="closeWindow(2)" title="Закрыть">×</button>
+                    </div>
                 </div>
                 <div class="window-content">
                     <div class="window-placeholder">2D/3D визуализация</div>
@@ -113,7 +123,10 @@
             <div class="scene-window" data-window-id="3">
                 <div class="window-header">
                     <span class="window-title">График 3</span>
-                    <button class="window-close" onclick="closeWindow(3)" title="Закрыть">×</button>
+                    <div style="display: flex; gap: 4px;">
+                        <button class="window-close" onclick="PlotManager.clearWindow(3)" title="Очистить">🗑</button>
+                        <button class="window-close" onclick="closeWindow(3)" title="Закрыть">×</button>
+                    </div>
                 </div>
                 <div class="window-content">
                     <div class="window-placeholder">2D/3D визуализация</div>
@@ -189,11 +202,15 @@
     <!-- Скрытый input для выбора файла -->
     <input type="file" id="file-input" accept=".csv,.txt,.dat,.tsv" style="display: none;">
 
-    <!-- Подключение JavaScript -->
+    <!-- Сначала WindowManager -->
+    <script src="../static/js/core/WindowManager.js"></script>
+
+    <!-- Потом остальные -->
     <script src="../static/js/widgets/SidebarManager.js"></script>
     <script src="../static/js/widgets/TabManager.js"></script>
-    <script src="../static/js/core/WindowManager.js"></script>
     <script src="../static/js/widgets/FileLoader.js"></script>
+    <script src="../static/js/vendor/plotly/plotly.min.js"></script>
+    <script src="../static/js/widgets/PlotManager.js"></script>
     
 </body>
 </html>
