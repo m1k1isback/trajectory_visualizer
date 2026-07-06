@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="../static/css/theme.css">
     <link rel="stylesheet" href="../static/css/toolbar.css">
     <link rel="stylesheet" href="../static/css/sidebar.css">
-    <link rel="stylesheet" href="../static/css/statusbar.css">
     <link rel="stylesheet" href="../static/css/windows.css">
     <link rel="stylesheet" href="../static/css/plots.css">
     <link rel="stylesheet" href="../static/css/cesium.css">
+    <link rel="stylesheet" href="../static/css/bottom-panel.css">
 </head>
 <body>
     <!-- Менюбар -->
@@ -63,10 +63,10 @@
         <div class="sidebar sidebar-left" id="sidebar-left">
             <div class="panel-widget">
                 <div class="widget-header">
-                    <span>Инспектор окон</span>
+                    <span>Инспектор графиков</span>
                     <button class="widget-toggle" onclick="toggleSidebar('left')" title="Скрыть панель">◀</button>
                 </div>
-                <div class="widget-content">
+                <div class="widget-content" id="graph-inspector-widget">
                     <p>Список графиков:<br><span class="placeholder">(пусто)</span></p>
                 </div>
             </div>
@@ -87,7 +87,7 @@
         </div>
 
         <!-- Кнопка-триггер для левой панели -->
-        <div class="sidebar-trigger" id="sidebar-trigger-left" onclick="toggleSidebar('left')" style="display: none;">
+        <div class="sidebar-trigger sidebar-trigger-left" id="sidebar-trigger-left" onclick="toggleSidebar('left')" style="display: none;">
             <span>▶</span>
         </div>
 
@@ -164,6 +164,11 @@
             </div>
         </div>
 
+        <!-- Кнопка-триггер для правой панели -->
+        <div class="sidebar-trigger sidebar-trigger-right" id="sidebar-trigger-right" onclick="toggleSidebar('right')" style="display: none;">
+            <span>◀</span>
+        </div>
+
     </div>
 
     <!-- Нижняя панель -->
@@ -194,18 +199,11 @@
         
     </div>
 
-    <!-- Статусбар -->
-    <div class="statusbar">
-        <span>Ready</span>
-    </div>
-
     <!-- Скрытый input для выбора файла -->
     <input type="file" id="file-input" accept=".csv,.txt,.dat,.tsv" style="display: none;">
 
-    <!-- Сначала WindowManager -->
+    <!-- Подключение JavaScript -->
     <script src="../static/js/core/WindowManager.js"></script>
-
-    <!-- Потом остальные -->
     <script src="../static/js/widgets/SidebarManager.js"></script>
     <script src="../static/js/widgets/TabManager.js"></script>
     <script src="../static/js/widgets/FileLoader.js"></script>
