@@ -50,8 +50,12 @@
         <div class="menu-dropdown">
             <button class="toolbar-btn">Помощь</button>
             <div class="dropdown-content">
-                <a href="#" class="dropdown-item"><span>Горячие клавиши</span></a>
-                <a href="#" class="dropdown-item"><span>О программе</span></a>
+                <a href="#" class="dropdown-item" onclick="AboutDialog.open(); return false;">
+                    <span>О программе</span>
+                </a>
+                <a href="#" class="dropdown-item">
+                    <span>Горячие клавиши</span>
+                </a>
             </div>
         </div>
     </div>
@@ -202,6 +206,98 @@
     <!-- Скрытый input для выбора файла -->
     <input type="file" id="file-input" accept=".csv,.txt,.dat,.tsv" style="display: none;">
 
+    <!-- Модальное окно "О программе" -->
+    <div id="about-dialog" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: #252526; border: 1px solid #3c3c3c; border-radius: 8px; min-width: 600px; max-width: 800px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+            <!-- Заголовок -->
+            <div style="background: linear-gradient(135deg, #0e639c 0%, #1a86bf 100%); padding: 24px; border-radius: 8px 8px 0 0;">
+                <h2 style="margin: 0; color: white; font-size: 28px; font-weight: 300; letter-spacing: 0.5px;">
+                    Визуализатор траекторий
+                </h2>
+                <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.8); font-size: 14px;">
+                    Система визуализации и анализа баллистических данных
+                </p>
+            </div>
+            
+            <!-- Содержимое -->
+            <div style="padding: 24px;">
+                <!-- Описание -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #cccccc; font-size: 16px; margin: 0 0 12px 0; border-bottom: 2px solid #0e639c; padding-bottom: 8px;">
+                        Описание
+                    </h3>
+                    <div style="color: #cccccc; line-height: 1.6; font-size: 14px;">
+                        <!-- СЮДА ВСТАВИТЬ ТЕКСТ ОПИСАНИЯ -->
+                        <p>Текст описания программы..Текст описания программы...Текст описания программы...Текст описания программы...Текст описания программы...Текст описания программы...Текст описания программы...Текст описания программы....</p>
+                    </div>
+                </div>
+                
+                <!-- Возможности -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #cccccc; font-size: 16px; margin: 0 0 12px 0; border-bottom: 2px solid #0e639c; padding-bottom: 8px;">
+                        Возможности
+                    </h3>
+                    <ul style="color: #cccccc; line-height: 1.8; font-size: 14px; margin: 0; padding-left: 24px;">
+                        <!-- СЮДА ВСТАВИТЬ СПИСОК ВОЗМОЖНОСТЕЙ -->
+                        <li>Возможность 1...</li>
+                        <li>Возможность 2...</li>
+                        <li>Возможность 3...</li>
+                    </ul>
+                </div>
+                
+                <!-- Форматы файлов -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #cccccc; font-size: 16px; margin: 0 0 12px 0; border-bottom: 2px solid #0e639c; padding-bottom: 8px;">
+                        Поддерживаемые форматы
+                    </h3>
+                    <div style="color: #cccccc; line-height: 1.6; font-size: 14px;">
+                        <!-- СЮДА ВСТАВИТЬ ИНФОРМАЦИЮ О ФОРМАТАХ -->
+                        <p>CSV, TXT, TSV, DAT...</p>
+                    </div>
+                </div>
+                
+                <!-- Технологии -->
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #cccccc; font-size: 16px; margin: 0 0 12px 0; border-bottom: 2px solid #0e639c; padding-bottom: 8px;">
+                        Технологии
+                    </h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span style="background: #2d2d2d; color: #cccccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; border: 1px solid #3c3c3c;">Python</span>
+                        <span style="background: #2d2d2d; color: #cccccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; border: 1px solid #3c3c3c;">FastAPI</span>
+                        <span style="background: #2d2d2d; color: #cccccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; border: 1px solid #3c3c3c;">JavaScript</span>
+                        <span style="background: #2d2d2d; color: #cccccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; border: 1px solid #3c3c3c;">Plotly</span>
+                        <span style="background: #2d2d2d; color: #cccccc; padding: 6px 12px; border-radius: 4px; font-size: 13px; border: 1px solid #3c3c3c;">NumPy</span>
+                    </div>
+                </div>
+                
+                <!-- Информация о версии -->
+                <div style="background: #2d2d2d; padding: 16px; border-radius: 6px; border-left: 4px solid #0e639c;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <div style="color: #858585; font-size: 12px; margin-bottom: 4px;">Версия</div>
+                            <div style="color: #cccccc; font-size: 14px; font-weight: bold;">1.0.0</div>
+                        </div>
+                        <div>
+                            <div style="color: #858585; font-size: 12px; margin-bottom: 4px;">Разработчик</div>
+                            <div style="color: #cccccc; font-size: 14px;">[Имя разработчика]</div>
+                        </div>
+                        <div>
+                            <div style="color: #858585; font-size: 12px; margin-bottom: 4px;">Год</div>
+                            <div style="color: #cccccc; font-size: 14px;">2026</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Кнопка закрытия -->
+            <div style="padding: 16px 24px; background: #1e1e1e; border-radius: 0 0 8px 8px; text-align: right;">
+                <button onclick="AboutDialog.close()" style="background: #0e639c; color: white; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                    Закрыть
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Подключение JavaScript -->
     <script src="../static/js/core/WindowManager.js"></script>
     <script src="../static/js/widgets/SidebarManager.js"></script>
@@ -209,6 +305,7 @@
     <script src="../static/js/widgets/FileLoader.js"></script>
     <script src="../static/js/vendor/plotly/plotly.min.js"></script>
     <script src="../static/js/widgets/PlotManager.js"></script>
+    <script src="../static/js/widgets/AboutDialog.js"></script>
     
 </body>
 </html>
