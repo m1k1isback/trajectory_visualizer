@@ -1,3 +1,36 @@
+/* CSS-переменные для тёмной темы (по умолчанию) */
+:root {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    --bg-tertiary: #2d2d2d;
+    --bg-toolbar: #2d2d2d;
+    --bg-widget-header: #2d2d2d;
+    --bg-window: #1e1e1e;
+    --bg-input: #3c3c3c;
+    --bg-tab-active: #1e1e1e;
+    --bg-tab-inactive: #2d2d2d;
+    --bg-console: #1e1e1e;
+    --bg-dropdown: #252526;
+    --bg-dropdown-hover: #3c3c3c;
+    
+    --text-primary: #cccccc;
+    --text-secondary: #858585;
+    --text-muted: #858585;
+    --text-placeholder: #858585;
+    
+    --border-color: #3c3c3c;
+    --border-light: #3c3c3c;
+    
+    --accent-color: #0e639c;
+    --accent-hover: #1a86bf;
+    --success-color: #4ec9b0;
+    --warning-color: #d29922;
+    --error-color: #f44747;
+    
+    --scrollbar-thumb: #424242;
+    --scrollbar-track: #1e1e1e;
+}
+
 * {
     margin: 0;
     padding: 0;

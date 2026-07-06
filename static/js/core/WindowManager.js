@@ -1,4 +1,6 @@
-// WindowManager.js - Управление окнами сцены
+/**
+ * WindowManager.js - Управление окнами сцены
+ */
 
 function closeWindow(windowId) {
     const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
@@ -15,10 +17,16 @@ function closeWindow(windowId) {
 
 function clearWindow(windowId) {
     const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
-    if (!windowElement) return;
+    if (!windowElement) {
+        console.error('WindowManager.clearWindow: окно ' + windowId + ' не найдено');
+        return;
+    }
     
     const content = windowElement.querySelector('.window-content');
-    if (!content) return;
+    if (!content) {
+        console.error('WindowManager.clearWindow: .window-content не найдено');
+        return;
+    }
     
     const isCesium = windowElement.classList.contains('window-cesium');
     
@@ -103,7 +111,10 @@ window.WindowManager = {
     updateSceneLayout: updateSceneLayout
 };
 
-// Инициализация при загрузке страницы
+window.closeWindow = closeWindow;
+window.clearWindow = clearWindow;
+window.updateSceneLayout = updateSceneLayout;
+
 document.addEventListener('DOMContentLoaded', function() {
     updateSceneLayout();
 });

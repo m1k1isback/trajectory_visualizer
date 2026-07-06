@@ -1,4 +1,6 @@
-// TabManager.js - Управление вкладками нижней панели
+/**
+ * TabManager.js - Управление вкладками и консолью
+ */
 
 document.addEventListener('DOMContentLoaded', function() {
     initTabs();
@@ -33,7 +35,7 @@ function logToConsole(message) {
     const consoleOutput = document.querySelector('.console-output');
     if (consoleOutput) {
         const timestamp = new Date().toLocaleTimeString();
-        consoleOutput.value += `[${timestamp}] ${message}\n`;
+        consoleOutput.value += '[' + timestamp + '] ' + message + '\n';
         consoleOutput.scrollTop = consoleOutput.scrollHeight;
     }
 }
@@ -50,3 +52,6 @@ window.TabManager = {
     clearConsole: clearConsole,
     switchTab: switchTab
 };
+
+window.logToConsole = logToConsole;
+window.clearConsole = clearConsole;
