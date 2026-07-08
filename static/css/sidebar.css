@@ -72,20 +72,13 @@
 
 /* Первый виджет (Инспектор графиков) — фиксированная высота */
 .sidebar-left .panel-widget:nth-child(1) {
-    flex: 0 0 auto;
-    max-height: 180px;
-    overflow-y: auto;
-}
-
-/* Второй виджет (Структура файлов) — занимает основное пространство */
-.sidebar-left .panel-widget:nth-child(2) {
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 100px;
 }
 
-/* Третий виджет (Свойства файла) — фиксированная высота */
-.sidebar-left .panel-widget:nth-child(3) {
+/* Второй виджет (Свойства файла) — фиксированная высота */
+.sidebar-left .panel-widget:nth-child(2) {
     flex: 0 0 auto;
     max-height: 120px;
     overflow-y: auto;

@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             //
             // Вызываем функции, которые рисуют данные на странице.
             // Эти функции описаны ниже в этом же файле.
-            updateFileStructure(result);      // Левая панель — список переменных
+            // updateFileStructure(result);      // Левая панель — список переменных
             updateFileProperties(result);     // Левая панель — свойства файла
             updateStatistics(result);         // Вкладка "СТАТИСТИКА"
             updateDataTable(result);          // Вкладка "ТАБЛИЦА"
