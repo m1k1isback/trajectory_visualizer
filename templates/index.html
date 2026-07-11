@@ -141,13 +141,16 @@
             </div>
 
             <div class="scene-window window-cesium" data-window-id="cesium">
-                <div class="window-header">
-                    <span class="window-title">Модель Земли</span>
-                </div>
-                <div class="window-content cesium-container">
-                    <div class="cesium-placeholder">Cesium Viewer</div>
-                </div>
-            </div>
+    <div class="window-header">
+        <span class="window-title">Модель Земли</span>
+        <div style="display: flex; gap: 4px;">
+            <button class="window-close" onclick="closeWindow('cesium')" title="Закрыть">×</button>
+        </div>
+    </div>
+    <div class="window-content cesium-container">
+        <div class="cesium-placeholder">Cesium Viewer</div>
+    </div>
+</div>
 
         </div>
 

@@ -20,15 +20,9 @@
 
 
 function closeWindow(windowId) {
-    /**
-     * Закрыть окно (добавить класс 'closed', оно исчезнет из раскладки).
-     */
-    // Ищем окно по атрибуту data-window-id.
-    // Селектор '[data-window-id="1"]' ищет элемент с таким атрибутом.
     const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
 
     if (windowElement) {
-        // Добавляем класс 'closed'. В CSS: .scene-window.closed { display: none; }
         windowElement.classList.add('closed');
 
         if (window.TabManager) {
@@ -37,9 +31,56 @@ function closeWindow(windowId) {
 
         // Пересчитываем раскладку оставшихся окон
         updateSceneLayout();
+
+        // === ИСПРАВЛЕНИЕ: resize графиков вместо redraw ===
+        setTimeout(function() {
+            resizeVisiblePlots();
+        }, 150);  // Увеличил задержку для перестройки grid
     }
 }
 
+function openWindow(windowId) {
+    const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
+    if (windowElement) {
+        windowElement.classList.remove('closed');
+
+        if (window.TabManager) {
+            TabManager.logToConsole('Окно ' + windowId + ' открыто');
+        }
+
+        updateSceneLayout();
+
+        // === ТОЖЕ ДОБАВИТЬ В openWindow ===
+        setTimeout(function() {
+            resizeVisiblePlots();
+        }, 150);
+    }
+}
+
+/**
+ * Изменить размер всех видимых графиков (без полной перерисовки).
+ */
+function resizeVisiblePlots() {
+    // Найти все контейнеры Plotly
+    const plotContainers = document.querySelectorAll('[id^="plot-"]');
+    
+    plotContainers.forEach(function(container) {
+        // Проверить что контейнер видим (не внутри display:none)
+        if (container.offsetParent !== null) {
+            // Plotly.Plots.resize() — встроенная функция для изменения размера
+            if (window.Plotly) {
+                Plotly.Plots.resize(container);
+            }
+        }
+    });
+    
+    if (window.TabManager) {
+        TabManager.logToConsole('Графики растянуты');
+    }
+}
+
+// Экспорт новой функции
+window.resizeVisiblePlots = resizeVisiblePlots;
 
 function clearWindow(windowId) {
     /**
@@ -75,20 +116,17 @@ function clearWindow(windowId) {
 function updateSceneLayout() {
     /**
      * Пересчитать раскладку окон в зависимости от количества видимых.
-     *
-     * ЛОГИКА:
-     * - 4 окна: сетка 2x2
-     * - 3 окна: одно широкое сверху, два снизу + Cesium
-     * - 2 окна: два в ряд
-     * - 1 окно: одно на весь экран
      */
     const container = document.getElementById('scene-container');
     if (!container) return;
 
-    // Находим все окна и только видимые (без класса 'closed')
     const allWindows = container.querySelectorAll('.scene-window');
     const visibleWindows = container.querySelectorAll('.scene-window:not(.closed)');
     const count = visibleWindows.length;
+
+    // Проверяем, открыт ли Cesium
+    const cesiumWindow = document.querySelector('[data-window-id="cesium"]');
+    const isCesiumOpen = cesiumWindow && !cesiumWindow.classList.contains('closed');
 
     // Сбрасываем grid-позиции у всех окон
     allWindows.forEach(function(w) {
@@ -97,42 +135,60 @@ function updateSceneLayout() {
     });
 
     if (count === 4) {
-        // Сетка 2x2
+        // Сетка 2x2 (все 4 окна открыты)
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr 1fr';
 
-        const cesium = document.querySelector('[data-window-id="cesium"]');
-        if (cesium) {
-            cesium.style.gridColumn = '2';
-            cesium.style.gridRow = '2';
+        if (cesiumWindow) {
+            cesiumWindow.style.gridColumn = '2';
+            cesiumWindow.style.gridRow = '2';
         }
-    } else if (count === 3) {
+    } else if (count === 3 && isCesiumOpen) {
+        // 3 окна + Cesium открыт
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr 1fr';
 
-        // Array.from() превращает NodeList в массив, чтобы использовать filter
         const visibleArray = Array.from(visibleWindows);
-        const cesium = document.querySelector('[data-window-id="cesium"]');
-
-        // filter оставляет только элементы, для которых функция вернула true
         const graphs = visibleArray.filter(function(w) {
             return w.dataset.windowId !== 'cesium';
         });
 
-        if (cesium && !cesium.classList.contains('closed')) {
-            cesium.style.gridColumn = '2';
-            cesium.style.gridRow = '2';
+        if (cesiumWindow) {
+            cesiumWindow.style.gridColumn = '2';
+            cesiumWindow.style.gridRow = '2';
+        }
 
-            if (graphs[0]) {
-                graphs[0].style.gridColumn = '1 / 3';  // Растянуть на 2 колонки
-                graphs[0].style.gridRow = '1';
-            }
-            if (graphs[1]) {
-                graphs[1].style.gridColumn = '1';
-                graphs[1].style.gridRow = '2';
-            }
+        if (graphs[0]) {
+            graphs[0].style.gridColumn = '1 / 3';  // Растянуть на 2 колонки
+            graphs[0].style.gridRow = '1';
+        }
+        if (graphs[1]) {
+            graphs[1].style.gridColumn = '1';
+            graphs[1].style.gridRow = '2';
+        }
+    } else if (count === 3 && !isCesiumOpen) {
+        // 3 окна БЕЗ Cesium — первое широкое сверху, два снизу
+        container.style.gridTemplateColumns = '1fr 1fr';
+        container.style.gridTemplateRows = '1fr 1fr';
+
+        const visibleArray = Array.from(visibleWindows);
+
+        // Первое окно — широкое сверху
+        if (visibleArray[0]) {
+            visibleArray[0].style.gridColumn = '1 / 3';
+            visibleArray[0].style.gridRow = '1';
+        }
+        // Второе и третье — снизу
+        if (visibleArray[1]) {
+            visibleArray[1].style.gridColumn = '1';
+            visibleArray[1].style.gridRow = '2';
+        }
+        if (visibleArray[2]) {
+            visibleArray[2].style.gridColumn = '2';
+            visibleArray[2].style.gridRow = '2';
         }
     } else if (count === 2) {
+        // 2 окна — в ряд
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr';
 
@@ -142,15 +198,19 @@ function updateSceneLayout() {
             w.style.gridRow = '1';
         });
     } else if (count === 1) {
+        // 1 окно — на весь экран
         container.style.gridTemplateColumns = '1fr';
         container.style.gridTemplateRows = '1fr';
 
         const visibleArray = Array.from(visibleWindows);
         visibleArray[0].style.gridColumn = '1';
         visibleArray[0].style.gridRow = '1';
+    } else if (count === 0) {
+        // Все окна закрыты
+        container.style.gridTemplateColumns = '1fr';
+        container.style.gridTemplateRows = '1fr';
     }
 }
-
 
 // === ЭКСПОРТ ===
 // Делаем функции доступными из HTML (onclick="closeWindow(1)")
