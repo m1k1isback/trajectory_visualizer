@@ -21,6 +21,10 @@
     margin-right: 8px;
 }
 
+.menu-dropdown:hover .dropdown-content {
+    display: block;
+}
+
 .toolbar-btn {
     background: transparent;
     color: var(--text-primary, #cccccc);
@@ -53,7 +57,8 @@
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 1001;
-    margin-top: 4px;
+    margin-top: 0;  /* УБРАТЬ ОТСТУП */
+    padding-top: 2px;  /* ДОБАВИТЬ ВНУТРЕННИЙ ОТСТУП */
     transition: background-color 0.3s, border-color 0.3s;
 }
 
