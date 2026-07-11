@@ -1,255 +1,278 @@
+/**
+ * ============================================================================
+ * PlotDialog.js — Диалог создания/редактирования графика
+ * ============================================================================
+ */
+
 const PlotDialog = {
-    editingGraphId: null,
+    currentGraphId: null,
 
+    /**
+     * Открыть диалог создания нового графика.
+     */
     open: function() {
-        this.editingGraphId = null;
-        this.showDialog();
+        this.currentGraphId = null;
+        document.getElementById('plot-dialog-title').textContent = 'Создание графика';
+
+        this.populateVariables();
+        this.populateWindows();
+
+        document.getElementById('plot-title').value = '';
+        document.getElementById('plot-x-variable').value = '';
+
+        // Сбросить выделение Y
+        var ySelect = document.getElementById('plot-y-variables');
+        Array.from(ySelect.options).forEach(function(opt) { opt.selected = false; });
+
+        // Показать секцию стилей (пустую пока не выбраны переменные)
+        this.refreshCurveStyles([]);
+
+        document.getElementById('plot-dialog').style.display = 'flex';
+
+        // Слушать изменение выбора Y для обновления секции стилей
+        var self = this;
+        ySelect.onchange = function() {
+            var selected = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
+            self.refreshCurveStyles(selected);
+        };
     },
 
+    /**
+     * Открыть диалог редактирования существующего графика.
+     */
     openEdit: function(graphId) {
-        const graph = PlotManager.graphs[graphId];
-        if (!graph) {
-            console.error('PlotDialog: график', graphId, 'не найден');
-            return;
-        }
+        var graph = PlotManager.graphs[graphId];
+        if (!graph) return;
 
-        this.editingGraphId = graphId;
-        this.showDialog(graph);
+        this.currentGraphId = graphId;
+        document.getElementById('plot-dialog-title').textContent = 'Редактирование графика';
+
+        this.populateVariables();
+        this.populateWindows();
+
+        document.getElementById('plot-x-variable').value = graph.xVariable;
+
+        var ySelect = document.getElementById('plot-y-variables');
+        Array.from(ySelect.options).forEach(function(opt) {
+            opt.selected = graph.yVariables.includes(opt.value);
+        });
+
+        document.getElementById('plot-title').value = graph.title || '';
+        document.getElementById('plot-window').value = graph.windowId;
+
+        // Показать секцию стилей с текущими настройками
+        this.refreshCurveStyles(graph.yVariables, graph);
+
+        document.getElementById('plot-dialog').style.display = 'flex';
+
+        var self = this;
+        ySelect.onchange = function() {
+            var selected = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
+            self.refreshCurveStyles(selected, graph);
+        };
     },
 
-    showDialog: function(graph) {
-        const dialog = document.getElementById('plot-dialog');
-        if (!dialog) {
-            console.error('PlotDialog: не найден элемент #plot-dialog');
-            return;
-        }
-
-        this.populateVariableLists();
-
-        const titleInput = document.getElementById('plot-title');
-        const windowSelect = document.getElementById('plot-window');
-        const ySelect = document.getElementById('plot-y-variables');
-
-        if (graph) {
-            // === РЕДАКТИРОВАНИЕ ===
-            document.getElementById('plot-x-variable').value = graph.xVariable;
-            if (titleInput) titleInput.value = graph.title;
-
-            for (let i = 0; i < ySelect.options.length; i++) {
-                ySelect.options[i].selected = graph.yVariables.includes(ySelect.options[i].value);
-            }
-
-            if (windowSelect) {
-                windowSelect.value = graph.windowId;
-            }
-
-            const colorsSection = document.getElementById('curve-colors-section');
-            if (colorsSection) colorsSection.style.display = 'block';
-            
-            this.renderCurveColors(graph);
-        } else {
-            // === СОЗДАНИЕ НОВОГО ===
-            if (titleInput) titleInput.value = '';
-            if (windowSelect) {
-                windowSelect.value = 'auto';
-            }
-            
-            const colorsSection = document.getElementById('curve-colors-section');
-            if (colorsSection) colorsSection.style.display = 'block';
-            
-            // Показываем подсказку
-            const container = document.getElementById('curve-colors-container');
-            if (container) {
-                container.innerHTML = '<p style="color: var(--text-secondary, #858585); font-size: 12px;">Выберите переменные Y</p>';
-            }
-        }
-
-        dialog.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    },
-
+    /**
+     * Закрыть диалог.
+     */
     close: function() {
-        const dialog = document.getElementById('plot-dialog');
-        if (dialog) {
-            dialog.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-        this.editingGraphId = null;
+        document.getElementById('plot-dialog').style.display = 'none';
+        this.currentGraphId = null;
     },
 
-    populateVariableLists: function() {
-        const xSelect = document.getElementById('plot-x-variable');
-        const ySelect = document.getElementById('plot-y-variables');
-
-        if (!xSelect || !ySelect) return;
+    /**
+     * Заполнить выпадающие списки переменных.
+     */
+    populateVariables: function() {
+        var xSelect = document.getElementById('plot-x-variable');
+        var ySelect = document.getElementById('plot-y-variables');
 
         xSelect.innerHTML = '';
         ySelect.innerHTML = '';
 
-        if (!window.currentDatasetColumns || window.currentDatasetColumns.length === 0) {
-            xSelect.innerHTML = '<option>Нет данных</option>';
-            ySelect.innerHTML = '<option>Нет данных</option>';
+        if (!window.currentDatasetColumns || currentDatasetColumns.length === 0) {
+            xSelect.innerHTML = '<option value="">(нет данных)</option>';
+            ySelect.innerHTML = '<option value="">(нет данных)</option>';
             return;
         }
 
-        window.currentDatasetColumns.forEach(function(col) {
-            const option = document.createElement('option');
-            option.value = col;
-            option.textContent = col;
-            xSelect.appendChild(option);
+        currentDatasetColumns.forEach(function(col) {
+            xSelect.innerHTML += '<option value="' + col + '">' + col + '</option>';
+            ySelect.innerHTML += '<option value="' + col + '">' + col + '</option>';
         });
-
-        window.currentDatasetColumns.forEach(function(col) {
-            const option = document.createElement('option');
-            option.value = col;
-            option.textContent = col;
-            ySelect.appendChild(option);
-        });
-    },
-
-    renderCurveColors: function(graph) {
-        const container = document.getElementById('curve-colors-container');
-        if (!container) return;
-
-        if (!graph.yVariables || graph.yVariables.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary, #858585); font-size: 12px;">Выберите переменные Y</p>';
-            return;
-        }
-
-        if (!graph.curveColors) {
-            graph.curveColors = {};
-        }
-
-        let html = '<div style="margin-top: 4px;">';
-        graph.yVariables.forEach(function(varName, index) {
-            if (!graph.curveColors[varName]) {
-                graph.curveColors[varName] = PlotManager.getCurveColor(index);
-            }
-            const color = graph.curveColors[varName];
-
-            html += '<div style="display: flex; align-items: center; margin-bottom: 6px;">';
-            html += '<input type="color" value="' + color + '" ' +
-                        'data-var="' + varName + '" ' +
-                        'class="curve-color-picker" ' +
-                        'style="width: 32px; height: 24px; border: 1px solid #555; border-radius: 3px; cursor: pointer; margin-right: 8px;">';
-            html += '<span style="color: var(--text-primary, #cccccc); font-size: 13px;">' + varName + '</span>';
-            html += '</div>';
-        });
-        html += '</div>';
-
-        container.innerHTML = html;
     },
 
     /**
-     * Обновить отображение цветов на основе текущего выбора в select Y
+     * Заполнить список окон.
      */
-    updateColorsFromSelect: function() {
-        const ySelect = document.getElementById('plot-y-variables');
-        if (!ySelect) return;
+    populateWindows: function() {
+        var windowSelect = document.getElementById('plot-window');
+        windowSelect.innerHTML = '<option value="auto">Автоматически (первое свободное)</option>';
 
-        const selectedVars = Array.from(ySelect.selectedOptions).map(opt => opt.value);
-        const container = document.getElementById('curve-colors-container');
-        
-        if (selectedVars.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary, #858585); font-size: 12px;">Выберите переменные Y</p>';
-            return;
-        }
-
-        // Генерируем color picker'ы
-        let html = '<div style="margin-top: 4px;">';
-        selectedVars.forEach(function(varName, index) {
-            const color = PlotManager.getCurveColor(index);
-            
-            html += '<div style="display: flex; align-items: center; margin-bottom: 6px;">';
-            html += '<input type="color" value="' + color + '" ' +
-                        'data-var="' + varName + '" ' +
-                        'class="curve-color-picker" ' +
-                        'style="width: 32px; height: 24px; border: 1px solid #555; border-radius: 3px; cursor: pointer; margin-right: 8px;">';
-            html += '<span style="color: var(--text-primary, #cccccc); font-size: 13px;">' + varName + '</span>';
-            html += '</div>';
+        var windows = document.querySelectorAll('.scene-window:not(.closed)');
+        windows.forEach(function(win) {
+            var id = win.dataset.windowId;
+            var title = win.querySelector('.window-title').textContent;
+            windowSelect.innerHTML += '<option value="' + id + '">' + title + '</option>';
         });
-        html += '</div>';
-
-        container.innerHTML = html;
     },
 
-    create: function() {
-        const xSelect = document.getElementById('plot-x-variable');
-        const ySelect = document.getElementById('plot-y-variables');
-        const titleInput = document.getElementById('plot-title');
-        const windowSelect = document.getElementById('plot-window');
+    /**
+     * Обновить секцию настройки стилей кривых.
+     */
+    refreshCurveStyles: function(variables, graph) {
+        var section = document.getElementById('curve-colors-section');
+        var container = document.getElementById('curve-colors-container');
 
-        if (!xSelect || !ySelect) return;
-
-        const xVariable = xSelect.value;
-        const yVariables = Array.from(ySelect.selectedOptions).map(opt => opt.value);
-        const title = titleInput.value.trim();
-        const windowId = windowSelect ? windowSelect.value : 'auto';
-
-        if (!xVariable || yVariables.length === 0) {
-            alert('Выберите хотя бы одну переменную для оси Y');
+        if (variables.length === 0) {
+            section.style.display = 'block';
+            container.innerHTML = '<p style="color: var(--text-secondary, #858585); font-size: 11px; padding: 8px; margin: 0;">Выберите переменные для оси Y</p>';
             return;
         }
 
-        // Собираем выбранные цвета кривых
-        const curveColors = {};
-        const colorPickers = document.querySelectorAll('.curve-color-picker');
-        colorPickers.forEach(function(picker) {
-            curveColors[picker.dataset.var] = picker.value;
+        section.style.display = 'block';
+        container.innerHTML = '';
+
+        var curveColors = graph ? (graph.curveColors || {}) : {};
+        var lineStyles = graph ? (graph.lineStyles || {}) : {};
+        var lineWidths = graph ? (graph.lineWidths || {}) : {};
+        var markerSymbols = graph ? (graph.markerSymbols || {}) : {};
+        var markerSizes = graph ? (graph.markerSizes || {}) : {};
+        var markerSteps = graph ? (graph.markerSteps || {}) : {};
+
+        variables.forEach(function(varName, index) {
+            var color = curveColors[varName] || PlotManager.getCurveColor(index);
+            var ls = lineStyles[varName] || 'solid';
+            var lw = lineWidths[varName] || 2;
+            var ms = markerSymbols[varName] || 'none';
+            var msz = markerSizes[varName] || 6;
+            var mst = markerSteps[varName] || 1;
+
+            var row = document.createElement('div');
+            row.style.cssText = 'margin-bottom: 10px; padding: 10px; background: var(--bg-primary, #1e1e1e); border-radius: 4px; border-left: 3px solid ' + color + ';';
+
+            row.innerHTML =
+                '<div style="font-size: 13px; font-weight: bold; color: var(--text-primary, #ccc); margin-bottom: 8px;">' + varName + '</div>' +
+                '<div style="display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 10px; align-items: center;">' +
+
+                    '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Цвет:</label>' +
+                    '<input type="color" data-var="' + varName + '" data-type="color" value="' + color + '" style="width: 100%; height: 26px; border: none; cursor: pointer; border-radius: 3px;">' +
+
+                    '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Стиль:</label>' +
+                    '<select data-var="' + varName + '" data-type="lineStyle" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
+                        '<option value="solid"' + (ls === 'solid' ? ' selected' : '') + '>Сплошная ──</option>' +
+                        '<option value="dash"' + (ls === 'dash' ? ' selected' : '') + '>Пунктир - -</option>' +
+                        '<option value="dot"' + (ls === 'dot' ? ' selected' : '') + '>Точки ···</option>' +
+                        '<option value="dashdot"' + (ls === 'dashdot' ? ' selected' : '') + '>Штрих-пунктир ·─</option>' +
+                    '</select>' +
+
+                    '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Толщина:</label>' +
+                    '<input type="number" data-var="' + varName + '" data-type="lineWidth" value="' + lw + '" min="0.5" max="10" step="0.5" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
+
+                    '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Маркер:</label>' +
+                    '<select data-var="' + varName + '" data-type="markerSymbol" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
+                        '<option value="none"' + (ms === 'none' ? ' selected' : '') + '>Нет</option>' +
+                        '<option value="circle"' + (ms === 'circle' ? ' selected' : '') + '>● Круг</option>' +
+                        '<option value="square"' + (ms === 'square' ? ' selected' : '') + '>■ Квадрат</option>' +
+                        '<option value="diamond"' + (ms === 'diamond' ? ' selected' : '') + '>◆ Ромб</option>' +
+                        '<option value="triangle-up"' + (ms === 'triangle-up' ? ' selected' : '') + '>▲ Треугольник</option>' +
+                        '<option value="cross"' + (ms === 'cross' ? ' selected' : '') + '>✕ Крест</option>' +
+                        '<option value="x"' + (ms === 'x' ? ' selected' : '') + '>✗ Икс</option>' +
+                    '</select>' +
+
+                    '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Размер:</label>' +
+                    '<input type="number" data-var="' + varName + '" data-type="markerSize" value="' + msz + '" min="2" max="20" step="1" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
+
+                    '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Каждый N-й:</label>' +
+                    '<input type="number" data-var="' + varName + '" data-type="markerStep" value="' + mst + '" min="1" max="100" step="1" title="Показывать маркер через каждые N точек" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
+
+                '</div>';
+
+            container.appendChild(row);
+        });
+    },
+
+    /**
+     * Собрать все настройки из формы.
+     */
+    collectStyles: function() {
+        var curveColors = {};
+        var lineStyles = {};
+        var lineWidths = {};
+        var markerSymbols = {};
+        var markerSizes = {};
+        var markerSteps = {};
+
+        var inputs = document.getElementById('curve-colors-container').querySelectorAll('input, select');
+        inputs.forEach(function(input) {
+            var v = input.dataset.var;
+            var t = input.dataset.type;
+            var val = input.value;
+            if (!v || !t) return;
+
+            if (t === 'color') curveColors[v] = val;
+            else if (t === 'lineStyle') lineStyles[v] = val;
+            else if (t === 'lineWidth') lineWidths[v] = parseFloat(val) || 2;
+            else if (t === 'markerSymbol') markerSymbols[v] = val;
+            else if (t === 'markerSize') markerSizes[v] = parseInt(val) || 6;
+            else if (t === 'markerStep') markerSteps[v] = parseInt(val) || 1;
         });
 
-        const isEditing = this.editingGraphId !== null;
-        const editingId = this.editingGraphId;
+        return {
+            curveColors: curveColors,
+            lineStyles: lineStyles,
+            lineWidths: lineWidths,
+            markerSymbols: markerSymbols,
+            markerSizes: markerSizes,
+            markerSteps: markerSteps
+        };
+    },
 
-        this.close();
+    /**
+     * Создать или обновить график.
+     */
+    create: function() {
+        var xVariable = document.getElementById('plot-x-variable').value;
+        var ySelect = document.getElementById('plot-y-variables');
+        var yVariables = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
+        var title = document.getElementById('plot-title').value || null;
+        var windowId = document.getElementById('plot-window').value;
 
-        if (isEditing) {
-            PlotManager.updateGraph(editingId, {
+        if (!xVariable) {
+            if (window.TabManager) TabManager.logToConsole('Выберите переменную для оси X', 'error');
+            return;
+        }
+        if (yVariables.length === 0) {
+            if (window.TabManager) TabManager.logToConsole('Выберите хотя бы одну переменную для оси Y', 'error');
+            return;
+        }
+
+        var styles = this.collectStyles();
+        var targetWindow = windowId !== 'auto' ? windowId : 'auto';
+
+        if (this.currentGraphId) {
+            PlotManager.updateGraph(this.currentGraphId, {
                 xVariable: xVariable,
                 yVariables: yVariables,
-                title: title || yVariables.join(', ') + ' от ' + xVariable,
-                windowId: windowId,
-                curveColors: curveColors
+                title: title,
+                windowId: targetWindow,
+                curveColors: styles.curveColors,
+                lineStyles: styles.lineStyles,
+                lineWidths: styles.lineWidths,
+                markerSymbols: styles.markerSymbols,
+                markerSizes: styles.markerSizes,
+                markerSteps: styles.markerSteps
             });
         } else {
-            PlotManager.createPlot(xVariable, yVariables, title, windowId, curveColors);
+            PlotManager.createPlot(
+                xVariable, yVariables, title, targetWindow,
+                styles.curveColors, styles.lineStyles, styles.lineWidths,
+                styles.markerSymbols, styles.markerSizes, styles.markerSteps
+            );
         }
-    },
 
-    handleKeyPress: function(event) {
-        if (event.key === 'Escape') {
-            const dialog = document.getElementById('plot-dialog');
-            if (dialog && dialog.style.display === 'flex') {
-                PlotDialog.close();
-            }
-        }
-    },
-
-    handleClickOutside: function(event) {
-        const dialog = document.getElementById('plot-dialog');
-        if (dialog && event.target === dialog) {
-            PlotDialog.close();
-        }
+        this.close();
     }
 };
-
-// Подписываемся на события
-document.addEventListener('keydown', function(event) {
-    PlotDialog.handleKeyPress(event);
-});
-
-document.addEventListener('click', function(event) {
-    PlotDialog.handleClickOutside(event);
-});
-
-// Подписываемся на изменение select Y
-document.addEventListener('DOMContentLoaded', function() {
-    const ySelect = document.getElementById('plot-y-variables');
-    if (ySelect) {
-        ySelect.addEventListener('change', function() {
-            PlotDialog.updateColorsFromSelect();
-        });
-    }
-});
 
 window.PlotDialog = PlotDialog;

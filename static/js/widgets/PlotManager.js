@@ -6,16 +6,16 @@
 
 // === ПАЛИТРА ЦВЕТОВ ДЛЯ КРИВЫХ ===
 const CURVE_COLORS = [
-    '#4ec9b0',  // бирюзовый
-    '#569cd6',  // синий
-    '#ce9178',  // оранжевый
-    '#c586c0',  // фиолетовый
-    '#dcdcaa',  // жёлтый
-    '#f44747',  // красный
-    '#9cdcfe',  // голубой
-    '#d4d4d4',  // серый
-    '#b5cea8',  // зелёный
-    '#d16969',  // тёмно-красный
+    '#4ec9b0',
+    '#569cd6',
+    '#ce9178',
+    '#c586c0',
+    '#dcdcaa',
+    '#f44747',
+    '#9cdcfe',
+    '#d4d4d4',
+    '#b5cea8',
+    '#d16969',
 ];
 
 // === НАСТРОЙКИ ЦВЕТОВ ДЛЯ РАЗНЫХ ТЕМ ===
@@ -77,14 +77,13 @@ const PlotManager = {
      * Получить настройки цветов для текущей темы.
      */
     getPlotTheme: function() {
-        const theme = this.getCurrentTheme();
-        return PLOT_THEMES[theme];
+        return PLOT_THEMES[this.getCurrentTheme()];
     },
 
     /**
      * Создать новый график.
      */
-    async createPlot(xVariable, yVariables, customTitle, targetWindowId, curveColors) {
+    async createPlot(xVariable, yVariables, customTitle, targetWindowId, curveColors, lineStyles, lineWidths, markerSymbols, markerSizes, markerSteps) {
         if (!window.currentDatasetId) {
             if (window.TabManager) {
                 TabManager.logToConsole('Ошибка: нет загруженных данных', 'error');
@@ -127,12 +126,16 @@ const PlotManager = {
             title: title,
             data: data,
             active: true,
-            curveColors: curveColors || {}
+            curveColors: curveColors || {},
+            lineStyles: lineStyles || {},
+            lineWidths: lineWidths || {},
+            markerSymbols: markerSymbols || {},
+            markerSizes: markerSizes || {},
+            markerSteps: markerSteps || {}
         };
 
         this.assignCurveColors(this.graphs[graphId]);
-        this.renderPlot(containerId, data, title, this.graphs[graphId].curveColors);
-
+        this.renderPlot(containerId, data, title, this.graphs[graphId]);
         this.updateInspector();
 
         if (window.TabManager) {
@@ -154,40 +157,40 @@ const PlotManager = {
         if (updates.yVariables) graph.yVariables = updates.yVariables;
         if (updates.title) graph.title = updates.title;
         if (updates.curveColors) graph.curveColors = updates.curveColors;
+        if (updates.lineStyles) graph.lineStyles = updates.lineStyles;
+        if (updates.lineWidths) graph.lineWidths = updates.lineWidths;
+        if (updates.markerSymbols) graph.markerSymbols = updates.markerSymbols;
+        if (updates.markerSizes) graph.markerSizes = updates.markerSizes;
+        if (updates.markerSteps) graph.markerSteps = updates.markerSteps;
 
         if (updates.windowId && updates.windowId !== graph.windowId) {
             const oldWindow = document.querySelector('[data-window-id="' + graph.windowId + '"]');
             if (oldWindow) {
-                const oldContent = oldWindow.querySelector('.window-content');
-                oldContent.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
+                oldWindow.querySelector('.window-content').innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
             }
 
             const newWindow = document.querySelector('[data-window-id="' + updates.windowId + '"]');
             if (newWindow) {
                 graph.windowId = updates.windowId;
                 graph.containerId = 'plot-' + updates.windowId;
-
                 const content = newWindow.querySelector('.window-content');
                 content.innerHTML = '<div id="' + graph.containerId + '" style="width:100%;height:100%;"></div>';
-
                 await new Promise(function(resolve) { setTimeout(resolve, 50); });
-
                 const data = await this.fetchPlotData(graph.xVariable, graph.yVariables);
                 if (data) {
                     graph.data = data;
-                    this.renderPlot(graph.containerId, data, graph.title, graph.curveColors);
+                    this.renderPlot(graph.containerId, data, graph.title, graph);
                 }
             }
         } else {
             const data = await this.fetchPlotData(graph.xVariable, graph.yVariables);
             if (data) {
                 graph.data = data;
-                this.renderPlot(graph.containerId, data, graph.title, graph.curveColors);
+                this.renderPlot(graph.containerId, data, graph.title, graph);
             }
         }
 
         this.updateInspector();
-
         if (window.TabManager) {
             TabManager.logToConsole('График "' + graph.title + '" обновлён');
         }
@@ -201,7 +204,6 @@ const PlotManager = {
         if (!graph) return;
 
         graph.active = !graph.active;
-
         const windowElement = document.querySelector('[data-window-id="' + graph.windowId + '"]');
         if (!windowElement) return;
 
@@ -209,23 +211,21 @@ const PlotManager = {
 
         if (graph.active) {
             Object.keys(this.graphs).forEach(function(otherId) {
-                const otherGraph = this.graphs[otherId];
-                if (otherId !== String(graphId) && otherGraph.windowId === graph.windowId) {
-                    otherGraph.active = false;
+                if (otherId !== String(graphId) && this.graphs[otherId].windowId === graph.windowId) {
+                    this.graphs[otherId].active = false;
                 }
             }.bind(this));
 
             content.innerHTML = '<div id="' + graph.containerId + '" style="width:100%;height:100%;"></div>';
-
             await new Promise(function(resolve) { setTimeout(resolve, 50); });
 
             if (graph.data) {
-                this.renderPlot(graph.containerId, graph.data, graph.title, graph.curveColors);
+                this.renderPlot(graph.containerId, graph.data, graph.title, graph);
             } else {
                 const data = await this.fetchPlotData(graph.xVariable, graph.yVariables);
                 if (data) {
                     graph.data = data;
-                    this.renderPlot(graph.containerId, data, graph.title, graph.curveColors);
+                    this.renderPlot(graph.containerId, data, graph.title, graph);
                 }
             }
         } else {
@@ -249,18 +249,9 @@ const PlotManager = {
 
         const lastGraphId = graphIds[graphIds.length - 1];
         const graph = this.graphs[lastGraphId];
-
         const container = document.getElementById(graph.containerId);
-        if (!container) {
-            delete this.graphs[lastGraphId];
-            this.updateInspector();
-            const xVar = window.currentDatasetColumns ? window.currentDatasetColumns[0] : 'h';
-            this.createPlot(xVar, [yVariable], null, 'auto');
-            return;
-        }
 
-        const placeholder = container.querySelector('.window-placeholder, .cesium-placeholder');
-        if (placeholder) {
+        if (!container || container.querySelector('.window-placeholder, .cesium-placeholder')) {
             delete this.graphs[lastGraphId];
             this.updateInspector();
             const xVar = window.currentDatasetColumns ? window.currentDatasetColumns[0] : 'h';
@@ -276,42 +267,23 @@ const PlotManager = {
      */
     async addCurveToGraph(graphId, yVariable) {
         const graph = this.graphs[graphId];
-        if (!graph) {
-            if (window.TabManager) {
-                TabManager.logToConsole('График не найден', 'error');
-            }
-            return;
-        }
-
-        if (graph.yVariables.includes(yVariable)) {
-            if (window.TabManager) {
-                TabManager.logToConsole('Переменная уже на графике', 'warning');
-            }
-            return;
-        }
+        if (!graph) return;
+        if (graph.yVariables.includes(yVariable)) return;
 
         const container = document.getElementById(graph.containerId);
-        if (!container) {
-            if (window.TabManager) {
-                TabManager.logToConsole('Контейнер графика не найден', 'error');
-            }
-            return;
-        }
+        if (!container) return;
 
         graph.yVariables.push(yVariable);
-
         const data = await this.fetchPlotData(graph.xVariable, graph.yVariables);
         if (!data) return;
 
         graph.data = data;
-
         this.assignCurveColors(graph);
-        this.renderPlot(graph.containerId, data, graph.title, graph.curveColors);
-
+        this.renderPlot(graph.containerId, data, graph.title, graph);
         this.updateInspector();
 
         if (window.TabManager) {
-            TabManager.logToConsole('Кривая "' + yVariable + '" добавлена на график');
+            TabManager.logToConsole('Кривая "' + yVariable + '" добавлена');
         }
     },
 
@@ -346,21 +318,26 @@ const PlotManager = {
     },
 
     /**
-     * Отрисовать график через Plotly с учётом цветов кривых и темы.
+     * Отрисовать график через Plotly.
      */
-    renderPlot(containerId, data, title, curveColors) {
-        // Получаем настройки для текущей темы
+    renderPlot(containerId, data, title, graph) {
         const theme = this.getPlotTheme();
+        const curveColors = graph.curveColors || {};
+        const lineStyles = graph.lineStyles || {};
+        const lineWidths = graph.lineWidths || {};
+        const markerSymbols = graph.markerSymbols || {};
+        const markerSizes = graph.markerSizes || {};
+        const markerSteps = graph.markerSteps || {};
 
         const traces = data.curves.map(function(curve, index) {
-            let color;
-            if (curveColors && curveColors[curve.name]) {
-                color = curveColors[curve.name];
-            } else {
-                color = this.getCurveColor(index);
-            }
+            const color = curveColors[curve.name] || this.getCurveColor(index);
+            const lineStyle = lineStyles[curve.name] || 'solid';
+            const lineWidth = lineWidths[curve.name] || 2;
+            const markerSymbol = markerSymbols[curve.name] || 'none';
+            const markerSize = markerSizes[curve.name] || 6;
+            const markerStep = markerSteps[curve.name] || 1;
 
-            return {
+            const trace = {
                 x: data.x,
                 y: curve.y,
                 type: 'scatter',
@@ -368,9 +345,34 @@ const PlotManager = {
                 name: curve.name + (curve.unit ? ' [' + curve.unit + ']' : ''),
                 line: {
                     color: color,
-                    width: 2
+                    width: lineWidth,
+                    dash: lineStyle
                 },
             };
+
+            if (markerSymbol !== 'none') {
+                trace.mode = 'lines+markers';
+
+                // Прореживание маркеров: показываем каждый N-й
+                const totalPoints = data.x.length;
+                const sizes = new Array(totalPoints).fill(0);
+
+                for (let i = 0; i < totalPoints; i += markerStep) {
+                    sizes[i] = markerSize;
+                }
+
+                trace.marker = {
+                    symbol: markerSymbol,
+                    size: sizes,
+                    color: color,
+                    line: {
+                        color: color,
+                        width: 1
+                    }
+                };
+            }
+
+            return trace;
         }.bind(this));
 
         const layout = {
@@ -412,20 +414,11 @@ const PlotManager = {
      */
     findFreeWindow: function() {
         const windows = document.querySelectorAll('.scene-window:not(.closed)');
-
         for (const win of windows) {
-            const content = win.querySelector('.window-content');
-            const placeholder = content.querySelector('.window-placeholder');
-            if (placeholder) {
-                return win;
-            }
+            const placeholder = win.querySelector('.window-content .window-placeholder');
+            if (placeholder) return win;
         }
-
-        if (windows.length > 0) {
-            return windows[0];
-        }
-
-        return null;
+        return windows.length > 0 ? windows[0] : null;
     },
 
     /**
@@ -463,35 +456,35 @@ const PlotManager = {
                         'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
                         graph.title + '</div>';
             html += '<div style="font-size: 10px; color: var(--text-secondary, #858585); margin-top: 2px;">' +
-                        'Окно: ' + graph.windowId + ' · ' +
-                        graph.yVariables.length + ' крив.' +
+                        'Окно: ' + graph.windowId + ' · ' + graph.yVariables.length + ' крив.' +
                         '</div>';
             html += '</div>';
 
             html += '<div style="display: flex; gap: 4px; margin-left: 8px; flex-shrink: 0;">';
 
+            // Кнопка настроек
             html += '<button onclick="PlotDialog.openEdit(' + id + ')" ' +
                         'title="Настройки" ' +
                         'style="background: transparent; border: none; color: var(--text-secondary, #858585); ' +
                         'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px;" ' +
-                        'onmouseover="this.style.color=\'var(--text-primary, #cccccc)\'; this.style.background=\'#3c3c3c\'" ' +
+                        'onmouseover="this.style.color=\'var(--text-primary, #cccccc)\'; this.style.background=\'var(--bg-tertiary, #3c3c3c)\'" ' +
                         'onmouseout="this.style.color=\'var(--text-secondary, #858585)\'; this.style.background=\'transparent\'">' +
-                        '</button>';
+                        '\u2699</button>';
 
+            // Кнопка удаления (мусорный бак)
             html += '<button onclick="PlotManager.removeGraph(' + id + ')" ' +
                         'title="Удалить" ' +
                         'style="background: transparent; border: none; color: var(--text-secondary, #858585); ' +
                         'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px;" ' +
-                        'onmouseover="this.style.color=\'#f44747\'; this.style.background=\'#3c3c3c\'" ' +
+                        'onmouseover="this.style.color=\'#f44747\'; this.style.background=\'var(--bg-tertiary, #3c3c3c)\'" ' +
                         'onmouseout="this.style.color=\'var(--text-secondary, #858585)\'; this.style.background=\'transparent\'">' +
-                        '</button>';
+                        '\uD83D\uDDD1</button>';
 
             html += '</div>';
             html += '</div>';
         }.bind(this));
 
         html += '</div>';
-
         widget.innerHTML = html;
     },
 
@@ -501,7 +494,6 @@ const PlotManager = {
     focusGraph: function(graphId) {
         const graph = this.graphs[graphId];
         if (!graph) return;
-
         const windowElement = document.querySelector('[data-window-id="' + graph.windowId + '"]');
         if (windowElement) {
             windowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -517,12 +509,10 @@ const PlotManager = {
 
         const windowElement = document.querySelector('[data-window-id="' + graph.windowId + '"]');
         if (windowElement) {
-            const content = windowElement.querySelector('.window-content');
-            content.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
+            windowElement.querySelector('.window-content').innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
         }
 
         delete this.graphs[graphId];
-
         this.updateInspector();
 
         if (window.TabManager) {
@@ -534,14 +524,11 @@ const PlotManager = {
      * Очистить все графики.
      */
     clearAll: function() {
-        const graphIds = Object.keys(this.graphs);
-
-        graphIds.forEach(function(id) {
+        Object.keys(this.graphs).forEach(function(id) {
             const graph = this.graphs[id];
             const windowElement = document.querySelector('[data-window-id="' + graph.windowId + '"]');
             if (windowElement) {
-                const content = windowElement.querySelector('.window-content');
-                content.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
+                windowElement.querySelector('.window-content').innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
             }
         }.bind(this));
 
@@ -558,25 +545,18 @@ const PlotManager = {
      */
     clearWindow: function(windowId) {
         const windowIdStr = String(windowId);
-
-        const graphIds = Object.keys(this.graphs);
         let foundGraph = null;
         let foundId = null;
 
-        for (let i = 0; i < graphIds.length; i++) {
-            const id = graphIds[i];
-            const graph = this.graphs[id];
-
-            if (graph && String(graph.windowId) === windowIdStr) {
-                foundGraph = graph;
+        Object.keys(this.graphs).forEach(function(id) {
+            if (String(this.graphs[id].windowId) === windowIdStr) {
+                foundGraph = this.graphs[id];
                 foundId = id;
-                break;
             }
-        }
+        }.bind(this));
 
         if (foundGraph && foundId) {
             delete this.graphs[foundId];
-
             if (window.TabManager) {
                 TabManager.logToConsole('График "' + foundGraph.title + '" очищен');
             }
@@ -591,17 +571,12 @@ const PlotManager = {
 
     /**
      * Перерисовать все активные графики с новой темой.
-     * Вызывается при переключении темы.
      */
     redrawAllPlots: function() {
-        const graphIds = Object.keys(this.graphs);
-
-        graphIds.forEach(function(id) {
+        Object.keys(this.graphs).forEach(function(id) {
             const graph = this.graphs[id];
-
-            // Перерисовываем только активные графики (которые видны)
             if (graph.active && graph.data) {
-                this.renderPlot(graph.containerId, graph.data, graph.title, graph.curveColors);
+                this.renderPlot(graph.containerId, graph.data, graph.title, graph);
             }
         }.bind(this));
 
