@@ -18,6 +18,26 @@ const CURVE_COLORS = [
     '#d16969',  // тёмно-красный
 ];
 
+// === НАСТРОЙКИ ЦВЕТОВ ДЛЯ РАЗНЫХ ТЕМ ===
+const PLOT_THEMES = {
+    dark: {
+        paper_bgcolor: '#1e1e1e',
+        plot_bgcolor: '#1e1e1e',
+        font_color: '#cccccc',
+        gridcolor: '#3c3c3c',
+        zerolinecolor: '#3c3c3c',
+        axis_title_color: '#cccccc',
+    },
+    light: {
+        paper_bgcolor: '#ffffff',
+        plot_bgcolor: '#f8f9fa',
+        font_color: '#1e1e1e',
+        gridcolor: '#e0e0e0',
+        zerolinecolor: '#cccccc',
+        axis_title_color: '#1e1e1e',
+    }
+};
+
 const PlotManager = {
     graphs: {},
     nextGraphId: 1,
@@ -41,6 +61,24 @@ const PlotManager = {
                 graph.curveColors[varName] = this.getCurveColor(index);
             }
         }.bind(this));
+    },
+
+    /**
+     * Определить текущую тему (тёмная или светлая).
+     */
+    getCurrentTheme: function() {
+        if (document.body.classList.contains('light-theme')) {
+            return 'light';
+        }
+        return 'dark';
+    },
+
+    /**
+     * Получить настройки цветов для текущей темы.
+     */
+    getPlotTheme: function() {
+        const theme = this.getCurrentTheme();
+        return PLOT_THEMES[theme];
     },
 
     /**
@@ -308,9 +346,12 @@ const PlotManager = {
     },
 
     /**
-     * Отрисовать график через Plotly с учётом цветов кривых.
+     * Отрисовать график через Plotly с учётом цветов кривых и темы.
      */
     renderPlot(containerId, data, title, curveColors) {
+        // Получаем настройки для текущей темы
+        const theme = this.getPlotTheme();
+
         const traces = data.curves.map(function(curve, index) {
             let color;
             if (curveColors && curveColors[curve.name]) {
@@ -335,23 +376,26 @@ const PlotManager = {
         const layout = {
             title: {
                 text: title,
-                font: { color: '#cccccc', size: 14 },
+                font: { color: theme.font_color, size: 14 },
             },
-            paper_bgcolor: '#1e1e1e',
-            plot_bgcolor: '#1e1e1e',
-            font: { color: '#cccccc' },
+            paper_bgcolor: theme.paper_bgcolor,
+            plot_bgcolor: theme.plot_bgcolor,
+            font: { color: theme.font_color },
             xaxis: {
                 title: data.x_name + (data.x_unit ? ' [' + data.x_unit + ']' : ''),
-                gridcolor: '#3c3c3c',
-                zerolinecolor: '#3c3c3c',
+                titlefont: { color: theme.axis_title_color },
+                gridcolor: theme.gridcolor,
+                zerolinecolor: theme.zerolinecolor,
+                tickfont: { color: theme.font_color },
             },
             yaxis: {
-                gridcolor: '#3c3c3c',
-                zerolinecolor: '#3c3c3c',
+                gridcolor: theme.gridcolor,
+                zerolinecolor: theme.zerolinecolor,
+                tickfont: { color: theme.font_color },
             },
             margin: { l: 60, r: 20, t: 40, b: 50 },
             showlegend: true,
-            legend: { font: { color: '#cccccc' } },
+            legend: { font: { color: theme.font_color } },
         };
 
         const config = {
@@ -432,7 +476,7 @@ const PlotManager = {
                         'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px;" ' +
                         'onmouseover="this.style.color=\'var(--text-primary, #cccccc)\'; this.style.background=\'#3c3c3c\'" ' +
                         'onmouseout="this.style.color=\'var(--text-secondary, #858585)\'; this.style.background=\'transparent\'">' +
-                        '⚙</button>';
+                        '</button>';
 
             html += '<button onclick="PlotManager.removeGraph(' + id + ')" ' +
                         'title="Удалить" ' +
@@ -440,7 +484,7 @@ const PlotManager = {
                         'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px;" ' +
                         'onmouseover="this.style.color=\'#f44747\'; this.style.background=\'#3c3c3c\'" ' +
                         'onmouseout="this.style.color=\'var(--text-secondary, #858585)\'; this.style.background=\'transparent\'">' +
-                        '🗑</button>';
+                        '</button>';
 
             html += '</div>';
             html += '</div>';
@@ -542,6 +586,27 @@ const PlotManager = {
 
         if (window.WindowManager && window.WindowManager.clearWindow) {
             window.WindowManager.clearWindow(windowId);
+        }
+    },
+
+    /**
+     * Перерисовать все активные графики с новой темой.
+     * Вызывается при переключении темы.
+     */
+    redrawAllPlots: function() {
+        const graphIds = Object.keys(this.graphs);
+
+        graphIds.forEach(function(id) {
+            const graph = this.graphs[id];
+
+            // Перерисовываем только активные графики (которые видны)
+            if (graph.active && graph.data) {
+                this.renderPlot(graph.containerId, graph.data, graph.title, graph.curveColors);
+            }
+        }.bind(this));
+
+        if (window.TabManager) {
+            TabManager.logToConsole('Графики перерисованы для новой темы');
         }
     },
 };

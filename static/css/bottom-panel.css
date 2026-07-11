@@ -3,55 +3,55 @@
 .bottom-panel {
     display: flex;
     height: 200px;
-    border-top: 1px solid #3c3c3c;
-    background: #1e1e1e;
+    border-top: 1px solid var(--border-color, #3c3c3c);
+    background: var(--bg-primary, #1e1e1e);
 }
 
 .bottom-left {
-    flex: 0 0 280px;  /* Фиксированная ширина как у левой панели */
+    flex: 0 0 280px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-color, #3c3c3c);
 }
 
 .bottom-right {
-    flex: 1;  /* Занимает всё оставшееся пространство */
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
 
 .panel-header {
     background: var(--bg-widget-header, #2d2d2d);
-    padding: 0 12px;  /* Убираем вертикальный padding */
-    height: 35px;  /* Фиксированная высота */
+    padding: 0 12px;
+    height: 35px;
     font-size: 12px;
     font-weight: bold;
     color: var(--text-primary, #cccccc);
     display: flex;
     justify-content: space-between;
-    align-items: center;  /* Центрирование по вертикали */
+    align-items: center;
     border-bottom: 1px solid var(--border-color, #3c3c3c);
-    box-sizing: border-box;  /* Чтобы padding не увеличивал высоту */
+    box-sizing: border-box;
 }
 
 .panel-action {
     background: transparent;
     border: none;
-    color: #cccccc;
+    color: var(--text-primary, #cccccc);
     cursor: pointer;
     padding: 2px 6px;
     font-size: 14px;
 }
 
 .panel-action:hover {
-    background: #3c3c3c;
+    background: var(--bg-tertiary, #3c3c3c);
     border-radius: 3px;
 }
 
 .console-output {
     flex: 1;
-    background: #1e1e1e;
-    color: #cccccc;
+    background: var(--bg-primary, #1e1e1e);
+    color: var(--text-primary, #cccccc);
     border: none;
     padding: 8px;
     font-family: 'Consolas', 'Courier New', monospace;
@@ -64,8 +64,8 @@
     display: flex;
     background: var(--bg-tab-inactive, #2d2d2d);
     border-bottom: 1px solid var(--border-color, #3c3c3c);
-    height: 35px;  /* Такая же высота как у panel-header */
-    align-items: center;  /* Центрирование вкладок по вертикали */
+    height: 35px;
+    align-items: center;
     box-sizing: border-box;
 }
 
@@ -73,29 +73,29 @@
     background: transparent;
     border: none;
     color: var(--text-secondary, #858585);
-    padding: 0 16px;  /* Убираем вертикальный padding */
-    height: 100%;  /* Занимает всю высоту tab-bar */
+    padding: 0 16px;
+    height: 100%;
     cursor: pointer;
     font-size: 12px;
     border-bottom: 2px solid transparent;
     display: flex;
-    align-items: center;  /* Центрирование текста внутри кнопки */
+    align-items: center;
 }
 
 .tab-btn:hover {
-    color: #cccccc;
-    background: #3c3c3c;
+    color: var(--text-primary, #cccccc);
+    background: var(--bg-tertiary, #3c3c3c);
 }
 
 .tab-btn.active {
-    color: #cccccc;
-    border-bottom: 2px solid #0e639c;
+    color: var(--text-primary, #cccccc);
+    border-bottom: 2px solid var(--accent-color, #0e639c);
 }
 
 .tab-content {
     flex: 1;
     overflow-y: auto;
-    background: #1e1e1e;
+    background: var(--bg-primary, #1e1e1e);
 }
 
 .tab-pane {
@@ -110,7 +110,7 @@
 }
 
 .tab-placeholder {
-    color: #858585;
+    color: var(--text-secondary, #858585);
     font-style: italic;
     text-align: center;
     padding: 20px;

@@ -1,116 +1,105 @@
-/* Тулбар */
+/* ============================================================================
+   toolbar.css — Стили для верхней панели меню
+   ============================================================================ */
+
 .toolbar {
-    height: 35px;
-    background-color: #323233;
-    border-bottom: 1px solid #3c3c3c;
     display: flex;
     align-items: center;
-    padding: 0 4px;
-    gap: 2px;
+    padding: 0 16px;
+    height: 48px;
+    background: var(--bg-toolbar, #1e1e1e);
+    color: var(--text-primary, #cccccc);
+    border-bottom: 1px solid var(--border-color, #3c3c3c);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1000;
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
-/* Кнопки тулбара */
+.menu-dropdown {
+    position: relative;
+    margin-right: 8px;
+}
+
 .toolbar-btn {
-    background-color: transparent;
-    color: #cccccc;
+    background: transparent;
+    color: var(--text-primary, #cccccc);
     border: none;
-    padding: 5px 12px;
-    font-size: 13px;
+    padding: 8px 16px;
+    font-size: 14px;
     cursor: pointer;
-    border-radius: 3px;
-    font-family: "Segoe UI", Tahoma, sans-serif;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    font-family: inherit;
 }
 
 .toolbar-btn:hover {
-    background-color: #4c4c4c;
-    color: #ffffff;
+    background: var(--bg-tertiary, #2d2d2d);
+    color: var(--text-primary, #cccccc);
 }
 
-/* Dropdown контейнер */
-.menu-dropdown {
-    position: relative;
-    display: inline-block;
+.toolbar-btn:active {
+    background: var(--bg-input, #3c3c3c);
 }
 
-/* Выпадающее меню */
 .dropdown-content {
     display: none;
     position: absolute;
     top: 100%;
     left: 0;
-    background-color: #2d2d2d;
-    border: 1px solid #3c3c3c;
-    min-width: 220px;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    padding: 4px 0;
+    min-width: 200px;
+    background: var(--bg-secondary, #252526);
+    border: 1px solid var(--border-color, #3c3c3c);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+    margin-top: 4px;
+    transition: background-color 0.3s, border-color 0.3s;
 }
 
-/* Показываем меню при наведении */
 .menu-dropdown:hover .dropdown-content {
     display: block;
 }
 
-/* Пункт меню */
 .dropdown-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 20px;
-    color: #cccccc;
+    padding: 10px 16px;
+    color: var(--text-primary, #cccccc);
     text-decoration: none;
-    font-size: 13px;
     cursor: pointer;
-    font-family: "Segoe UI", Tahoma, sans-serif;
+    transition: background-color 0.2s;
 }
 
 .dropdown-item:hover {
-    background-color: #094771;
-    color: #ffffff;
+    background: var(--bg-tertiary, #2d2d2d);
 }
 
-/* Горячие клавиши */
+.dropdown-item span:first-child {
+    flex: 1;
+}
+
 .shortcut {
-    color: #858585;
+    color: var(--text-secondary, #858585);
     font-size: 12px;
-    margin-left: 30px;
+    margin-left: 16px;
 }
 
-.dropdown-item:hover .shortcut {
-    color: #cccccc;
-}
-
-/* Стрелка подменю */
-.arrow {
-    color: #858585;
-    font-size: 10px;
-}
-
-/* Разделитель */
 .dropdown-divider {
     height: 1px;
-    background-color: #3c3c3c;
+    background: var(--border-color, #3c3c3c);
     margin: 4px 0;
+    transition: background-color 0.3s;
 }
 
-/* Подменю */
-.dropdown-submenu {
-    position: relative;
+/* Кнопка переключения темы */
+#theme-toggle {
+    margin-left: auto;
+    font-size: 18px;
+    padding: 8px 12px;
 }
 
-.dropdown-submenu .submenu-content {
-    display: none;
-    position: absolute;
-    left: 100%;
-    top: -4px;
-    background-color: #2d2d2d;
-    border: 1px solid #3c3c3c;
-    min-width: 200px;
-    z-index: 1001;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    padding: 4px 0;
-}
-
-.dropdown-submenu:hover .submenu-content {
-    display: block;
+#theme-toggle:hover {
+    background: var(--bg-tertiary, #2d2d2d);
 }
