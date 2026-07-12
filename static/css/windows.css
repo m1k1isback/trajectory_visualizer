@@ -1,15 +1,46 @@
+/* === ГЛАВНАЯ РАСКЛАДКА === */
+
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;  /* Запрещаем скролл страницы */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Менюбар — не сжимается */
+.toolbar {
+    flex-shrink: 0;
+}
+
+/* Главная область — занимает всё оставшееся место */
 .main-container {
     flex: 1;
     display: flex;
     overflow: hidden;
+    min-height: 0;  /* ВАЖНО: позволяет сжиматься */
 }
+
+/* Нижняя панель — не сжимается, фиксированная высота */
+.bottom-panel {
+    flex-shrink: 0;
+    height: 250px;  /* Фиксированная высота */
+    border-top: 1px solid var(--border-color, #3c3c3c);
+}
+
+/* === СЦЕНА === */
 
 .scene-container {
     flex: 1;
     display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
     gap: 2px;
     background-color: var(--bg-primary, #1e1e1e);
     padding: 2px;
+    min-height: 0;  /* ВАЖНО: позволяет сжиматься */
+    overflow: hidden;
 }
 
 .scene-window {
@@ -18,7 +49,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 150px;
+    min-height: 0;  /* ВАЖНО */
+    max-height: 100%;
 }
 
 .scene-window.closed {
@@ -32,6 +64,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-shrink: 0;  /* Заголовок не сжимается */
 }
 
 .window-title {
@@ -63,6 +96,15 @@
     align-items: center;
     justify-content: center;
     background-color: var(--bg-primary, #1e1e1e);
+    min-height: 0;  /* ВАЖНО */
+    overflow: hidden;
+}
+
+/* Cesium окно — без центрирования */
+.window-cesium .window-content {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
 }
 
 /* Placeholder для пустых окон графиков */
@@ -94,6 +136,11 @@
     letter-spacing: 2px;
 }
 
+/* Cesium контейнер */
 .cesium-container {
+    width: 100%;
+    height: 100%;
     background-color: #000000;
+    position: relative;
+    min-height: 0;
 }

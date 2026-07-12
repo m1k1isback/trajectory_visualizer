@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="../static/css/cesium.css">
     <link rel="stylesheet" href="../static/css/bottom-panel.css">
     <link rel="stylesheet" href="../static/css/theme-light.css"> 
+
+    <!-- Cesium CSS -->
+    <link rel="stylesheet" href="../static/js/vendor/Cesium/Widgets/widgets.css">
 </head>
 <body>
     <!-- Менюбар -->
@@ -147,8 +150,7 @@
             <button class="window-close" onclick="closeWindow('cesium')" title="Закрыть">×</button>
         </div>
     </div>
-    <div class="window-content cesium-container">
-        <div class="cesium-placeholder">Cesium Viewer</div>
+    <div class="window-content cesium-container" id="cesium-container">
     </div>
 </div>
 
@@ -302,5 +304,8 @@
     <script src="../static/js/vendor/plotly/plotly.min.js"></script>
     <script src="../static/js/widgets/PlotManager.js"></script>
     
+    <!-- Cesium JS -->
+    <script src="../static/js/vendor/Cesium/Cesium.js"></script>
+    <script src="../static/js/widgets/CesiumViewer.js"></script>
 </body>
 </html>

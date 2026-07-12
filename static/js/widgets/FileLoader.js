@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // === ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===
+                        // === ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===
             //
             // Вызываем функции, которые рисуют данные на странице.
             // Эти функции описаны ниже в этом же файле.
@@ -208,6 +208,12 @@ document.addEventListener('DOMContentLoaded', function() {
             updateFileProperties(result);     // Левая панель — свойства файла
             updateStatistics(result);         // Вкладка "СТАТИСТИКА"
             updateDataTable(result);          // Вкладка "ТАБЛИЦА"
+
+            // === ЗАГРУЗКА ТРАЕКТОРИИ В CESIUM ===
+            // После успешной загрузки файла — отображаем траекторию на карте Земли
+            if (window.CesiumViewer && CesiumViewer.initialized && window.currentDatasetId) {
+                CesiumViewer.loadTrajectoryFromFile(window.currentDatasetId);
+            }
 
         } catch (error) {
             // Сюда мы попадаем, если в блоке try произошла ошибка.
