@@ -61,17 +61,13 @@ function toggleBottomPanel() {
     const toggleBtn = document.getElementById('bottom-panel-toggle');
 
     if (bottomPanel) {
-        bottomPanel.classList.toggle('collapsed');
-
-        if (bottomPanel.classList.contains('collapsed')) {
-            if (toggleBtn) toggleBtn.innerHTML = '▲'; // Стрелка вверх
-            if (window.TabManager) TabManager.logToConsole('Нижняя панель свернута');
-        } else {
-            if (toggleBtn) toggleBtn.innerHTML = '▼'; // Стрелка вниз
-            if (window.TabManager) TabManager.logToConsole('Нижняя панель развернута');
+        const isCollapsed = bottomPanel.classList.toggle('collapsed');
+        
+        // ЖЁСТКО меняем стрелку через JavaScript
+        if (toggleBtn) {
+            toggleBtn.textContent = isCollapsed ? '▲' : '▼';
         }
 
-        // Перерисовка Cesium после завершения CSS-анимации (300мс)
         setTimeout(() => {
             if (window.CesiumViewer && CesiumViewer.viewer) {
                 CesiumViewer.viewer.resize();

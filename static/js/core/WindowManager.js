@@ -6,51 +6,46 @@
  * ЧТО ЭТО ЗА ФАЙЛ:
  * Отвечает за:
  * 1. Закрытие окон графиков (кнопка ×).
- * 2. Очистку окон (кнопка ) — возврат к placeholder.
+ * 2. Очистку окон (кнопка 🗑) — возврат к placeholder и очистка состояния.
  * 3. Автоматическую раскладку окон (grid layout) при изменении количества.
- *
- * КОНЦЕПЦИИ JS:
- * - querySelector — поиск одного элемента по CSS-селектору
- * - querySelectorAll — поиск нескольких элементов
- * - classList.add/remove/toggle/contains — управление CSS-классами
- * - Array.from() — превратить NodeList в настоящий массив
- * - filter() — отфильтровать элементы массива по условию
- * - forEach — перебор элементов
+ * 4. Корректное изменение размера Plotly и Cesium при перестройке сетки.
  */
 
 
 function closeWindow(windowId) {
-    const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
+    const windowIdStr = String(windowId);
+    const windowElement = document.querySelector('[data-window-id="' + windowIdStr + '"]');
 
     if (windowElement) {
         windowElement.classList.add('closed');
 
         if (window.TabManager) {
-            TabManager.logToConsole('Окно "График ' + windowId + '" закрыто');
+            TabManager.logToConsole('Окно "' + windowIdStr + '" закрыто');
         }
 
         // Пересчитываем раскладку оставшихся окон
         updateSceneLayout();
 
-        // === ИСПРАВЛЕНИЕ: resize графиков вместо redraw ===
+        // Изменяем размер графиков и Cesium после перестройки grid
         setTimeout(function() {
             resizeVisiblePlots();
-        }, 150);  // Увеличил задержку для перестройки grid
+        }, 150);
     }
 }
 
 function openWindow(windowId) {
-    const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
+    const windowIdStr = String(windowId);
+    const windowElement = document.querySelector('[data-window-id="' + windowIdStr + '"]');
+    
     if (windowElement) {
         windowElement.classList.remove('closed');
 
         if (window.TabManager) {
-            TabManager.logToConsole('Окно ' + windowId + ' открыто');
+            TabManager.logToConsole('Окно "' + windowIdStr + '" открыто');
         }
 
         updateSceneLayout();
 
-        // === ТОЖЕ ДОБАВИТЬ В openWindow ===
         setTimeout(function() {
             resizeVisiblePlots();
         }, 150);
@@ -58,57 +53,69 @@ function openWindow(windowId) {
 }
 
 /**
- * Изменить размер всех видимых графиков (без полной перерисовки).
+ * Изменить размер всех видимых графиков и Cesium (без полной перерисовки).
  */
 function resizeVisiblePlots() {
-    // Найти все контейнеры Plotly
+    // 1. Изменяем размер графиков Plotly
     const plotContainers = document.querySelectorAll('[id^="plot-"]');
-    
     plotContainers.forEach(function(container) {
-        // Проверить что контейнер видим (не внутри display:none)
-        if (container.offsetParent !== null) {
-            // Plotly.Plots.resize() — встроенная функция для изменения размера
-            if (window.Plotly) {
-                Plotly.Plots.resize(container);
-            }
+        // Проверка что контейнер видим (не внутри display:none)
+        if (container.offsetParent !== null && window.Plotly) {
+            Plotly.Plots.resize(container);
         }
     });
     
+    // 2. Изменяем размер Cesium, если он виден
+    if (window.CesiumViewer && CesiumViewer.viewer) {
+        const cesiumContainer = document.getElementById('cesium-container');
+        if (cesiumContainer && cesiumContainer.offsetParent !== null) {
+            CesiumViewer.viewer.resize();
+        }
+    }
+    
     if (window.TabManager) {
-        TabManager.logToConsole('Графики растянуты');
+        TabManager.logToConsole('Размеры окон обновлены');
     }
 }
-
-// Экспорт новой функции
-window.resizeVisiblePlots = resizeVisiblePlots;
 
 function clearWindow(windowId) {
     /**
      * Очистить окно (вернуть placeholder, но не закрывать).
+     * ВАЖНО: Для графиков делегирует задачу PlotManager, чтобы очистить и состояние.
      */
-    const windowElement = document.querySelector('[data-window-id="' + windowId + '"]');
+    const windowIdStr = String(windowId);
+    const windowElement = document.querySelector('[data-window-id="' + windowIdStr + '"]');
+    
     if (!windowElement) {
-        console.error('WindowManager.clearWindow: окно ' + windowId + ' не найдено');
+        console.warn('WindowManager.clearWindow: окно ' + windowIdStr + ' не найдено');
         return;
     }
 
+    // Если это окно графика и есть PlotManager, пусть он корректно всё очистит
+    if (windowIdStr !== 'cesium' && window.PlotManager && typeof window.PlotManager.clearWindow === 'function') {
+        window.PlotManager.clearWindow(windowIdStr);
+        return;
+    }
+
+    // Fallback для Cesium или если PlotManager недоступен
     const content = windowElement.querySelector('.window-content');
     if (!content) {
         console.error('WindowManager.clearWindow: .window-content не найдено');
         return;
     }
 
-    // Проверяем, является ли окно окном Cesium (у него другой placeholder)
-    const isCesium = windowElement.classList.contains('window-cesium');
-
-    if (isCesium) {
+    if (windowIdStr === 'cesium') {
         content.innerHTML = '<div class="cesium-placeholder">Cesium Viewer</div>';
+        // Очищаем сцену Cesium от объектов
+        if (window.CesiumViewer) {
+            CesiumViewer.clear();
+        }
     } else {
         content.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
     }
 
     if (window.TabManager) {
-        TabManager.logToConsole('Окно "График ' + windowId + '" очищено');
+        TabManager.logToConsole('Окно "' + windowIdStr + '" очищено');
     }
 }
 
@@ -128,14 +135,14 @@ function updateSceneLayout() {
     const cesiumWindow = document.querySelector('[data-window-id="cesium"]');
     const isCesiumOpen = cesiumWindow && !cesiumWindow.classList.contains('closed');
 
-    // Сбрасываем grid-позиции у всех окон
+    // Сбрасываем grid-позиции у всех окон перед пересчётом
     allWindows.forEach(function(w) {
         w.style.gridColumn = '';
         w.style.gridRow = '';
     });
 
     if (count === 4) {
-        // Сетка 2x2 (все 4 окна открыты)
+        // Сетка 2x2 (все 4 окна открыты: 3 графика + Cesium)
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr 1fr';
 
@@ -144,7 +151,7 @@ function updateSceneLayout() {
             cesiumWindow.style.gridRow = '2';
         }
     } else if (count === 3 && isCesiumOpen) {
-        // 3 окна + Cesium открыт
+        // 3 окна всего (2 графика + Cesium)
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gridTemplateRows = '1fr 1fr';
 
@@ -157,9 +164,8 @@ function updateSceneLayout() {
             cesiumWindow.style.gridColumn = '2';
             cesiumWindow.style.gridRow = '2';
         }
-
         if (graphs[0]) {
-            graphs[0].style.gridColumn = '1 / 3';  // Растянуть на 2 колонки
+            graphs[0].style.gridColumn = '1 / 3';  // Растянуть на 2 колонки сверху
             graphs[0].style.gridRow = '1';
         }
         if (graphs[1]) {
@@ -173,12 +179,10 @@ function updateSceneLayout() {
 
         const visibleArray = Array.from(visibleWindows);
 
-        // Первое окно — широкое сверху
         if (visibleArray[0]) {
             visibleArray[0].style.gridColumn = '1 / 3';
             visibleArray[0].style.gridRow = '1';
         }
-        // Второе и третье — снизу
         if (visibleArray[1]) {
             visibleArray[1].style.gridColumn = '1';
             visibleArray[1].style.gridRow = '2';
@@ -213,20 +217,20 @@ function updateSceneLayout() {
 }
 
 // === ЭКСПОРТ ===
-// Делаем функции доступными из HTML (onclick="closeWindow(1)")
-// и из других JS-файлов.
-
 window.WindowManager = {
     closeWindow: closeWindow,
+    openWindow: openWindow,
     clearWindow: clearWindow,
-    updateSceneLayout: updateSceneLayout
+    updateSceneLayout: updateSceneLayout,
+    resizeVisiblePlots: resizeVisiblePlots
 };
 
-// Также экспортируем напрямую для удобства
+// Также экспортируем напрямую для удобства вызова из HTML (onclick="...")
 window.closeWindow = closeWindow;
+window.openWindow = openWindow;
 window.clearWindow = clearWindow;
 window.updateSceneLayout = updateSceneLayout;
-
+window.resizeVisiblePlots = resizeVisiblePlots;
 
 // Инициализация раскладки при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {

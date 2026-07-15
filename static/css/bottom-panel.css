@@ -1,108 +1,203 @@
-/* Bottom Panel CSS - Стили нижней панели */
+/* ============================================================================
+   bottom-panel.css — Стили нижней панели (таблица/статистика + вкладки файлов)
+   ============================================================================ */
 
+/* === НИЖНЯЯ ПАНЕЛЬ === */
 .bottom-panel {
-    display: flex;
-    height: 200px;
+    background: var(--bg-secondary, #252526);
     border-top: 1px solid var(--border-color, #3c3c3c);
-    background: var(--bg-primary, #1e1e1e);
-}
-
-.bottom-left {
-    flex: 0 0 280px;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-color, #3c3c3c);
+    flex-shrink: 0;
+    transition: height 0.3s ease;
+    height: 250px;
+    min-height: 40px;
 }
 
-.bottom-right {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+.bottom-panel.collapsed {
+    height: 40px !important;
+    overflow: visible !important; /* Кнопка должна быть видна! */
 }
 
-.panel-header {
-    background: var(--bg-widget-header, #2d2d2d);
-    padding: 0 12px;
-    height: 35px;
-    font-size: 12px;
-    font-weight: bold;
-    color: var(--text-primary, #cccccc);
+/* === ВКЛАДКИ ФАЙЛОВ === */
+.file-tabs-container {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    background: var(--bg-secondary, #252526);
     border-bottom: 1px solid var(--border-color, #3c3c3c);
-    box-sizing: border-box;
+    padding: 0 8px;
+    min-height: 32px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
 }
 
-.panel-action {
+/* Скрываем вкладки файлов когда панель свёрнута */
+.bottom-panel.collapsed .file-tabs-container {
+    display: none;
+}
+
+.file-tab {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: var(--bg-tertiary, #2d2d2d);
+    border: 1px solid var(--border-color, #3c3c3c);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    margin-right: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 200px;
+}
+
+.file-tab:hover {
+    background: var(--bg-widget-header, #3c3c3c);
+}
+
+.file-tab.active {
+    background: var(--bg-primary, #1e1e1e);
+    border-bottom: 1px solid var(--bg-primary, #1e1e1e);
+    margin-bottom: -1px;
+}
+
+.file-tab-name {
+    font-size: 11px;
+    color: var(--text-primary, #cccccc);
+    margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.file-tab-close {
     background: transparent;
     border: none;
-    color: var(--text-primary, #cccccc);
-    cursor: pointer;
-    padding: 2px 6px;
+    color: var(--text-secondary, #858585);
     font-size: 14px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
-.panel-action:hover {
-    background: var(--bg-tertiary, #3c3c3c);
-    border-radius: 3px;
+.file-tab-close:hover {
+    color: #f44747;
 }
 
-.console-output {
-    flex: 1;
-    background: var(--bg-primary, #1e1e1e);
+.file-tab-add {
+    background: transparent;
+    border: 1px dashed var(--border-color, #3c3c3c);
+    color: var(--text-secondary, #858585);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.file-tab-add:hover {
+    background: var(--bg-tertiary, #2d2d2d);
     color: var(--text-primary, #cccccc);
-    border: none;
-    padding: 8px;
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 12px;
-    resize: none;
-    outline: none;
+    border-color: var(--text-secondary, #858585);
 }
 
+/* === ЗАГОЛОВОК НИЖНЕЙ ПАНЕЛИ === */
+.bottom-panel-header {
+    background: var(--bg-widget-header, #2d2d2d);
+    padding: 0 12px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-color, #3c3c3c);
+}
+
+.bottom-panel.collapsed .bottom-panel-header {
+    border-bottom: none;
+}
+
+/* === ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК === */
 .tab-bar {
     display: flex;
-    background: var(--bg-tab-inactive, #2d2d2d);
-    border-bottom: 1px solid var(--border-color, #3c3c3c);
-    height: 35px;
-    align-items: center;
-    box-sizing: border-box;
+    gap: 4px;
 }
 
 .tab-btn {
     background: transparent;
     border: none;
     color: var(--text-secondary, #858585);
-    padding: 0 16px;
-    height: 100%;
+    padding: 8px 16px;
     cursor: pointer;
     font-size: 12px;
+    font-weight: 500;
     border-bottom: 2px solid transparent;
-    display: flex;
-    align-items: center;
+    transition: all 0.2s;
 }
 
 .tab-btn:hover {
     color: var(--text-primary, #cccccc);
-    background: var(--bg-tertiary, #3c3c3c);
 }
 
 .tab-btn.active {
     color: var(--text-primary, #cccccc);
-    border-bottom: 2px solid var(--accent-color, #0e639c);
+    border-bottom-color: var(--accent-color, #0e639c);
+}
+
+/* === КНОПКА СВЁРТКИ (БЕЗ TRANSFORM!) === */
+.bottom-panel-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #858585);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 16px;
+    border-radius: 4px;
+    transition: background 0.2s; /* Только фон, никакого transform */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.bottom-panel-toggle:hover {
+    background: var(--bg-tertiary, #3c3c3c);
+    color: var(--text-primary, #cccccc);
+}
+
+/* === СОДЕРЖИМОЕ ВКЛАДОК === */
+.bottom-panel-content {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Скрываем содержимое когда панель свёрнута */
+.bottom-panel.collapsed .bottom-panel-content {
+    display: none;
 }
 
 .tab-content {
     flex: 1;
-    overflow-y: auto;
-    background: var(--bg-primary, #1e1e1e);
+    overflow: hidden;
+    position: relative;
 }
 
 .tab-pane {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
     display: none;
     padding: 8px;
-    height: 100%;
-    overflow-y: auto;
 }
 
 .tab-pane.active {
@@ -110,8 +205,110 @@
 }
 
 .tab-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
     color: var(--text-secondary, #858585);
     font-style: italic;
-    text-align: center;
-    padding: 20px;
+    font-size: 14px;
+}
+
+/* === ТАБЛИЦА ДАННЫХ === */
+.tab-pane table {
+    border-collapse: collapse;
+    font-size: 11px;
+    font-family: monospace;
+}
+
+.tab-pane th {
+    background: var(--bg-tertiary, #2d2d2d);
+    color: var(--text-primary, #cccccc);
+    padding: 4px 6px;
+    border: 1px solid var(--border-color, #3c3c3c);
+    text-align: left;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.tab-pane td {
+    padding: 2px 6px;
+    border: 1px solid var(--border-color, #3c3c3c);
+    color: var(--text-primary, #cccccc);
+}
+
+.tab-pane tr:nth-child(even) {
+    background: var(--bg-secondary, #252526);
+}
+
+.tab-pane tr:hover {
+    background: var(--bg-tertiary, #2d2d2d);
+}
+
+/* === СВЕТЛАЯ ТЕМА === */
+body.light-theme .file-tab {
+    background: var(--bg-tertiary, #e8e8e8);
+    border-color: var(--border-color, #d0d0d0);
+}
+
+body.light-theme .file-tab.active {
+    background: var(--bg-primary, #ffffff);
+    border-bottom-color: var(--bg-primary, #ffffff);
+}
+
+body.light-theme .file-tab-name {
+    color: var(--text-primary, #1e1e1e);
+}
+
+body.light-theme .file-tab-close {
+    color: var(--text-secondary, #6a6a6a);
+}
+
+body.light-theme .file-tab-close:hover {
+    color: #f44747;
+}
+
+body.light-theme .file-tab-add {
+    border-color: var(--border-color, #d0d0d0);
+    color: var(--text-secondary, #6a6a6a);
+}
+
+body.light-theme .file-tab-add:hover {
+    background: var(--bg-tertiary, #e8e8e8);
+    color: var(--text-primary, #1e1e1e);
+}
+
+body.light-theme .bottom-panel-header {
+    background: var(--bg-widget-header, #f3f3f3);
+    border-bottom-color: var(--border-color, #d0d0d0);
+}
+
+body.light-theme .tab-btn {
+    color: var(--text-secondary, #6a6a6a);
+}
+
+body.light-theme .tab-btn.active {
+    color: var(--text-primary, #1e1e1e);
+    border-bottom-color: var(--accent-color, #0e639c);
+}
+
+body.light-theme .tab-pane th {
+    background: var(--bg-tertiary, #e8e8e8);
+    color: var(--text-primary, #1e1e1e);
+    border-color: var(--border-color, #d0d0d0);
+}
+
+body.light-theme .tab-pane td {
+    color: var(--text-primary, #1e1e1e);
+    border-color: var(--border-color, #d0d0d0);
+}
+
+body.light-theme .tab-pane tr:nth-child(even) {
+    background: var(--bg-secondary, #f3f3f3);
+}
+
+body.light-theme .tab-pane tr:hover {
+    background: var(--bg-tertiary, #e8e8e8);
 }

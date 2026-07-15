@@ -421,72 +421,73 @@ const PlotManager = {
         return windows.length > 0 ? windows[0] : null;
     },
 
-    /**
-     * Обновить инспектор графиков (левая панель).
-     */
     updateInspector: function() {
-        const widget = document.getElementById('graph-inspector-widget');
-        if (!widget) return;
+    const widget = document.getElementById('graph-inspector-widget');
+    if (!widget) return;
 
-        const graphIds = Object.keys(this.graphs);
+    const graphIds = Object.keys(this.graphs);
 
-        if (graphIds.length === 0) {
-            widget.innerHTML = '<p style="color: var(--text-secondary, #858585); font-size: 12px; padding: 12px;">' +
-                               '<span class="placeholder">(нет открытых графиков)</span></p>';
-            return;
-        }
+    if (graphIds.length === 0) {
+        widget.innerHTML = '<p style="color: var(--text-secondary, #858585); font-size: 12px; padding: 12px;">' +
+                           '<span class="placeholder">(нет открытых графиков)</span></p>';
+        return;
+    }
 
-        let html = '<div style="padding: 4px 0;">';
+    let html = '<div style="padding: 4px 0;">';
 
-        graphIds.forEach(function(id) {
-            const graph = this.graphs[id];
-            const isChecked = graph.active ? 'checked' : '';
+    graphIds.forEach(function(id) {
+        const graph = this.graphs[id];
+        const isChecked = graph.active ? 'checked' : '';
 
-            html += '<div style="display: flex; align-items: center; padding: 8px 10px; ' +
-                        'border-bottom: 1px solid var(--border-light, #2d2d2d); ' +
-                        'background: ' + (graph.active ? 'var(--bg-tertiary, #2d2d2d)' : 'transparent') + ';">';
+        html += '<div style="display: flex; align-items: center; padding: 8px 10px; ' +
+                    'border-bottom: 1px solid var(--border-light, #2d2d2d); ' +
+                    'background: ' + (graph.active ? 'var(--bg-tertiary, #2d2d2d)' : 'transparent') + ';">';
 
-            html += '<input type="checkbox" ' + isChecked + ' ' +
-                        'onchange="PlotManager.toggleGraph(' + id + ')" ' +
-                        'style="margin-right: 10px; cursor: pointer; flex-shrink: 0;">';
+        html += '<input type="checkbox" ' + isChecked + ' ' +
+                    'onchange="PlotManager.toggleGraph(' + id + ')" ' +
+                    'style="margin-right: 10px; cursor: pointer; flex-shrink: 0;">';
 
-            html += '<div style="flex: 1; min-width: 0; cursor: pointer;" ' +
-                        'onclick="PlotManager.focusGraph(' + id + ')">';
-            html += '<div style="font-weight: bold; color: var(--text-primary, #cccccc); font-size: 12px; ' +
-                        'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
-                        graph.title + '</div>';
-            html += '<div style="font-size: 10px; color: var(--text-secondary, #858585); margin-top: 2px;">' +
-                        'Окно: ' + graph.windowId + ' · ' + graph.yVariables.length + ' крив.' +
-                        '</div>';
-            html += '</div>';
+        html += '<div style="flex: 1; min-width: 0; cursor: pointer;" ' +
+                    'onclick="PlotManager.focusGraph(' + id + ')">';
+        html += '<div style="font-weight: bold; color: var(--text-primary, #cccccc); font-size: 12px; ' +
+                    'overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
+                    graph.title + '</div>';
+        html += '<div style="font-size: 10px; color: var(--text-secondary, #858585); margin-top: 2px;">' +
+                    'Окно: ' + graph.windowId + ' · ' + graph.yVariables.length + ' крив.' +
+                    '</div>';
+        html += '</div>';
 
-            html += '<div style="display: flex; gap: 4px; margin-left: 8px; flex-shrink: 0;">';
+        html += '<div style="display: flex; gap: 4px; margin-left: 8px; flex-shrink: 0;">';
 
-            // Кнопка настроек
-            html += '<button onclick="PlotDialog.openEdit(' + id + ')" ' +
-                        'title="Настройки" ' +
-                        'style="background: transparent; border: none; color: var(--text-secondary, #858585); ' +
-                        'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px;" ' +
-                        'onmouseover="this.style.color=\'var(--text-primary, #cccccc)\'; this.style.background=\'var(--bg-tertiary, #3c3c3c)\'" ' +
-                        'onmouseout="this.style.color=\'var(--text-secondary, #858585)\'; this.style.background=\'transparent\'">' +
-                        '\u2699</button>';
+        // Кнопка настроек
+        html += '<button onclick="PlotDialog.openEdit(' + id + ')" ' +
+                    'title="Настройки" ' +
+                    'style="background: transparent; border: none; color: var(--text-secondary, #858585); ' +
+                    'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px; ' +
+                    'display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">' +
+                    '⚙</button>';
 
-            // Кнопка удаления (мусорный бак)
-            html += '<button onclick="PlotManager.removeGraph(' + id + ')" ' +
-                        'title="Удалить" ' +
-                        'style="background: transparent; border: none; color: var(--text-secondary, #858585); ' +
-                        'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px;" ' +
-                        'onmouseover="this.style.color=\'#f44747\'; this.style.background=\'var(--bg-tertiary, #3c3c3c)\'" ' +
-                        'onmouseout="this.style.color=\'var(--text-secondary, #858585)\'; this.style.background=\'transparent\'">' +
-                        '\uD83D\uDDD1</button>';
-
-            html += '</div>';
-            html += '</div>';
-        }.bind(this));
+        // Кнопка удаления - ИСПОЛЬЗУЕМ SVG ДЛЯ ГАРАНТИРОВАННОГО ОТОБРАЖЕНИЯ
+        html += '<button onclick="PlotManager.removeGraph(' + id + ')" ' +
+                    'title="Удалить" ' +
+                    'style="background: transparent; border: none; color: var(--text-secondary, #858585); ' +
+                    'cursor: pointer; font-size: 14px; padding: 4px 6px; border-radius: 3px; ' +
+                    'display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;">' +
+                    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                    '<polyline points="3 6 5 6 21 6"></polyline>' +
+                    '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>' +
+                    '<line x1="10" y1="11" x2="10" y2="17"></line>' +
+                    '<line x1="14" y1="11" x2="14" y2="17"></line>' +
+                    '</svg>' +
+                    '</button>';
 
         html += '</div>';
-        widget.innerHTML = html;
-    },
+        html += '</div>';
+    }.bind(this));
+
+    html += '</div>';
+    widget.innerHTML = html;
+},
 
     /**
      * Сфокусироваться на графике (прокрутить к нему).
@@ -540,14 +541,15 @@ const PlotManager = {
         }
     },
 
-    /**
-     * Очистить конкретное окно.
+       /**
+     * Очистить конкретное окно (безопасная версия).
      */
     clearWindow: function(windowId) {
         const windowIdStr = String(windowId);
         let foundGraph = null;
         let foundId = null;
 
+        // Находим график в этом окне
         Object.keys(this.graphs).forEach(function(id) {
             if (String(this.graphs[id].windowId) === windowIdStr) {
                 foundGraph = this.graphs[id];
@@ -555,6 +557,7 @@ const PlotManager = {
             }
         }.bind(this));
 
+        // Удаляем из памяти
         if (foundGraph && foundId) {
             delete this.graphs[foundId];
             if (window.TabManager) {
@@ -564,8 +567,21 @@ const PlotManager = {
 
         this.updateInspector();
 
-        if (window.WindowManager && window.WindowManager.clearWindow) {
-            window.WindowManager.clearWindow(windowId);
+        // === БЕЗОПАСНАЯ ОЧИСТКА DOM ===
+        // Мы ищем ТОЛЬКО .window-content, чтобы не задеть .window-header
+        const windowElement = document.querySelector('[data-window-id="' + windowIdStr + '"]');
+        if (windowElement) {
+            const content = windowElement.querySelector('.window-content');
+            if (content) {
+                content.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
+            } else {
+                // Если по какой-то причине .window-content не найден, создаём его,
+                // но НИКОГДА не перезаписываем innerHTML всего windowElement
+                const placeholder = document.createElement('div');
+                placeholder.className = 'window-content';
+                placeholder.innerHTML = '<div class="window-placeholder">2D/3D визуализация</div>';
+                windowElement.appendChild(placeholder);
+            }
         }
     },
 

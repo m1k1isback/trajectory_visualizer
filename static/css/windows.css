@@ -1,36 +1,99 @@
-/* === ГЛАВНАЯ РАСКЛАДКА === */
+/* ============================================================================
+   windows.css — Главная раскладка, окна, панели и Cesium
+   ============================================================================ */
 
+/* === ГЛОБАЛЬНАЯ РАСКЛАДКА === */
 html, body {
     height: 100vh;
     margin: 0;
     padding: 0;
-    overflow: hidden;  /* Запрещаем скролл страницы */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-/* Менюбар — не сжимается */
 .toolbar {
     flex-shrink: 0;
 }
 
-/* Главная область — занимает всё оставшееся место */
 .main-container {
     flex: 1;
     display: flex;
+    flex-direction: row;
     overflow: hidden;
-    min-height: 0;  /* ВАЖНО: позволяет сжиматься */
+    min-height: 0;
 }
 
-/* Нижняя панель — не сжимается, фиксированная высота */
-.bottom-panel {
+/* === ЛЕВАЯ КОЛОНКА (Панель + Консоль) === */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    width: 280px;
     flex-shrink: 0;
-    height: 250px;  /* Фиксированная высота */
-    border-top: 1px solid var(--border-color, #3c3c3c);
+    transition: width 0.3s ease;
+    border-right: 1px solid var(--border-color, #3c3c3c);
+    background: var(--bg-secondary, #252526);
+    overflow: hidden;
 }
 
-/* === СЦЕНА === */
+.left-column.collapsed {
+    width: 0 !important;
+    border: none !important;
+}
 
+.sidebar-left {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    border-right: none;
+}
+
+.console-panel {
+    height: 150px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--border-color, #3c3c3c);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary, #252526);
+}
+
+.left-column.collapsed .console-panel {
+    display: none;
+}
+
+/* Кнопка-триггер левой панели */
+.sidebar-trigger-left {
+    position: absolute;
+    top: 30%;
+    left: 0;
+    transform: translateY(-50%);
+    background: var(--bg-widget-header, #2d2d2d);
+    border: 1px solid var(--border-color, #3c3c3c);
+    border-left: none;
+    color: var(--text-primary, #cccccc);
+    padding: 8px 4px;
+    cursor: pointer;
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0 4px 4px 0;
+}
+
+.sidebar-trigger-left:hover {
+    background: var(--bg-tertiary, #3c3c3c);
+}
+
+/* === ПРАВАЯ ОБЛАСТЬ (Сцена + Нижняя панель) === */
+.right-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* === СЦЕНА (Grid 2x2) === */
 .scene-container {
     flex: 1;
     display: grid;
@@ -39,7 +102,7 @@ html, body {
     gap: 2px;
     background-color: var(--bg-primary, #1e1e1e);
     padding: 2px;
-    min-height: 0;  /* ВАЖНО: позволяет сжиматься */
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -49,14 +112,15 @@ html, body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    min-height: 0;  /* ВАЖНО */
-    max-height: 100%;
+    min-height: 0;
+    height: 100%;
 }
 
 .scene-window.closed {
     display: none;
 }
 
+/* === ЗАГОЛОВОК ОКНА И КНОПКИ (ИСПРАВЛЕНИЕ ИСЧЕЗАЮЩИХ КНОПОК) === */
 .window-header {
     background-color: var(--bg-widget-header, #2d2d2d);
     padding: 5px 10px;
@@ -64,7 +128,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-shrink: 0;  /* Заголовок не сжимается */
+    flex-shrink: 0;
 }
 
 .window-title {
@@ -73,23 +137,41 @@ html, body {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
 }
 
-.window-close {
-    background: none;
+/* ЖЁСТКАЯ ФИКСАЦИЯ КНОПОК, ЧТОБЫ ОНИ НЕ ИСЧЕЗАЛИ */
+.window-header .window-close {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0 !important; /* ЗАПРЕТ НА СЖАТИЕ */
+    background: transparent;
     border: none;
     color: var(--text-secondary, #858585);
     font-size: 16px;
     cursor: pointer;
-    padding: 0 4px;
-    border-radius: 2px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    padding: 0;
 }
 
-.window-close:hover {
+.window-header .window-close:hover {
+    background-color: var(--bg-tertiary, #3c3c3c);
+    color: var(--text-primary, #cccccc);
+}
+
+.window-header .window-close[title="Очистить"]:hover {
     background-color: #e81123;
     color: #ffffff;
 }
 
+/* === КОНТЕНТ ОКНА === */
 .window-content {
     flex: 1;
     display: flex;
@@ -107,10 +189,10 @@ html, body {
     justify-content: stretch !important;
     padding: 0 !important;
     margin: 0 !important;
-    /* УБРАНО: height: 100% !important; width: 100% !important; */
 }
-/* Placeholder для пустых окон графиков */
-.window-placeholder {
+
+/* Placeholder для пустых окон */
+.window-placeholder, .cesium-placeholder {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -120,25 +202,15 @@ html, body {
     background: var(--bg-primary, #1e1e1e);
     font-size: 14px;
     font-style: italic;
-    transition: background-color 0.3s, color 0.3s;
 }
 
-/* Placeholder для Cesium */
 .cesium-placeholder {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    color: #858585;
     background: #000000;
-    font-size: 14px;
-    font-style: italic;
     font-family: monospace;
     letter-spacing: 2px;
 }
 
-/* Cesium контейнер */
+/* === CESIUM КОНТЕЙНЕР === */
 .cesium-container {
     width: 100%;
     height: 100%;
@@ -147,78 +219,79 @@ html, body {
     min-height: 0;
 }
 
-/* === ГИБКИЕ ПАНЕЛИ === */
-
-/* Левая панель + консоль */
-.sidebar-left-container {
-    display: flex;
-    flex-direction: column;
-    transition: width 0.3s ease;
-    min-width: 0;
+#cesium-container canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: auto !important;
+    touch-action: none;
 }
 
-.sidebar-left {
-    border-right: 1px solid var(--border-color, #3c3c3c);
-    transition: width 0.3s ease;
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-geocoderContainer {
+    display: none !important;
 }
 
-.sidebar-left.collapsed {
-    width: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    overflow: hidden;
+.cesium-controls {
+    pointer-events: none !important;
 }
 
-/* Консоль прикреплена к левой панели */
-.console-panel {
-    border-top: 1px solid var(--border-color, #3c3c3c);
-    transition: opacity 0.3s ease;
+.cesium-controls button {
+    pointer-events: auto !important;
 }
 
-.sidebar-left.collapsed + .console-panel {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Нижняя панель с кнопкой сворачивания */
+/* === НИЖНЯЯ ПАНЕЛЬ (Таблица/Статистика) === */
 .bottom-panel {
+    background: var(--bg-secondary, #252526);
     border-top: 1px solid var(--border-color, #3c3c3c);
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
     transition: height 0.3s ease;
-    min-height: 0;
+    height: 250px;
+    min-height: 40px;
 }
 
 .bottom-panel.collapsed {
-    height: 40px !important;  /* Только заголовок */
+    height: 40px !important;
     overflow: hidden;
 }
 
 .bottom-panel-header {
+    background: var(--bg-widget-header, #2d2d2d);
+    padding: 0 12px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: var(--bg-widget-header, #2d2d2d);
-    padding: 0 10px;
-    height: 40px;
     flex-shrink: 0;
+    border-bottom: 1px solid var(--border-color, #3c3c3c);
+}
+
+.bottom-panel.collapsed .bottom-panel-header {
+    border-bottom: none;
 }
 
 .bottom-panel-toggle {
-    background: none;
+    background: transparent;
     border: none;
     color: var(--text-secondary, #858585);
-    font-size: 18px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 4px 8px;
+    font-size: 16px;
     border-radius: 4px;
-    transition: all 0.3s;
+    transition: transform 0.3s ease, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .bottom-panel-toggle:hover {
-    background-color: var(--bg-tertiary, #3c3c3c);
+    background: var(--bg-tertiary, #3c3c3c);
     color: var(--text-primary, #cccccc);
-    transform: rotate(180deg);
 }
 
 .bottom-panel.collapsed .bottom-panel-toggle {
@@ -228,29 +301,69 @@ html, body {
 .bottom-panel-content {
     flex: 1;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
     min-height: 0;
 }
 
-/* Сцена занимает всё оставшееся место */
-.scene-container {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 2px;
-    background-color: var(--bg-primary, #1e1e1e);
-    padding: 2px;
-    min-height: 0;
-    overflow: hidden;
-    transition: all 0.3s ease;
+/* Виджеты внутри левой панели */
+.panel-widget {
+    background: var(--bg-secondary, #252526);
+    border-bottom: 1px solid var(--border-color, #3c3c3c);
+    display: flex;
+    flex-direction: column;
 }
 
-/* Когда левая панель скрыта — сцена шире */
-.main-container.sidebar-hidden .scene-container {
-    grid-template-columns: 1fr;
+.sidebar-left .panel-widget:nth-child(1) {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 100px;
 }
 
-/* Когда нижняя панель скрыта — сцена выше */
-.main-container.bottom-hidden .scene-container {
-    grid-template-rows: 1fr;
+.sidebar-left .panel-widget:nth-child(2) {
+    flex: 0 0 auto;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.widget-header {
+    background: var(--bg-widget-header, #2d2d2d);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-primary, #cccccc);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color, #3c3c3c);
+}
+
+.widget-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #858585);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 14px;
+}
+
+.widget-toggle:hover {
+    background: var(--bg-tertiary, #3c3c3c);
+    border-radius: 3px;
+}
+
+.widget-content {
+    padding: 12px;
+    font-size: 12px;
+    color: var(--text-primary, #cccccc);
+    overflow-y: auto;
+}
+
+.widget-content p {
+    margin: 0 0 8px 0;
+}
+
+.widget-content .placeholder {
+    color: var(--text-secondary, #858585);
+    font-style: italic;
 }

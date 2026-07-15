@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Визуализатор траекторий</title>
     
     <link rel="stylesheet" href="../static/css/theme.css">
@@ -68,7 +69,7 @@
         <!-- Кнопка переключения темы -->
         <div style="margin-left: auto; display: flex; align-items: center;">
             <button id="theme-toggle" class="toolbar-btn" onclick="ThemeManager.toggle()" title="Переключить тему">
-                
+                🌙
             </button>
         </div>
     </div>
@@ -108,7 +109,7 @@
             <div class="console-panel" id="console-panel">
                 <div class="widget-header">
                     <span>КОНСОЛЬ</span>
-                    <button class="widget-toggle" onclick="document.getElementById('console-content').innerHTML = ''" title="Очистить">🗑</button>
+                    <button class="widget-toggle" onclick="document.getElementById('console-content').innerHTML = ''" title="Очистить"></button>
                 </div>
                 <div class="widget-content" id="console-content">
                     <p>> Система инициализирована. Ожидание действий пользователя...</p>
@@ -141,7 +142,7 @@
                     <div class="window-header">
                         <span class="window-title">График 2</span>
                         <div style="display: flex; gap: 4px;">
-                            <button class="window-close" onclick="PlotManager.clearWindow(2)" title="Очистить"></button>
+                            <button class="window-close" onclick="PlotManager.clearWindow(2)" title="Очистить">🗑</button>
                             <button class="window-close" onclick="closeWindow(2)" title="Закрыть">×</button>
                         </div>
                     </div>
@@ -154,7 +155,7 @@
                     <div class="window-header">
                         <span class="window-title">График 3</span>
                         <div style="display: flex; gap: 4px;">
-                            <button class="window-close" onclick="PlotManager.clearWindow(3)" title="Очистить">🗑</button>
+                            <button class="window-close" onclick="PlotManager.clearWindow(3)" title="Очистить"></button>
                             <button class="window-close" onclick="closeWindow(3)" title="Закрыть">×</button>
                         </div>
                     </div>
@@ -177,8 +178,14 @@
             </div>
             <!-- /Центральная сцена -->
 
-            <!-- Нижняя панель (таблица/статистика) — только под сценой -->
+            <!-- Нижняя панель (таблица/статистика) -->
             <div class="bottom-panel" id="bottom-panel">
+                <!-- Вкладки файлов -->
+                <div class="file-tabs-container" id="file-tabs-container">
+                    <!-- Вкладки будут добавлены динамически -->
+                </div>
+                
+                <!-- Вкладки контента -->
                 <div class="bottom-panel-header">
                     <div class="tab-bar">
                         <button class="tab-btn active" data-tab="table">ТАБЛИЦА</button>
@@ -319,6 +326,7 @@
     <script src="../static/js/widgets/SidebarManager.js"></script>
     <script src="../static/js/widgets/TabManager.js"></script>
     <script src="../static/js/widgets/FileLoader.js"></script>
+    <script src="../static/js/widgets/FileTabManager.js"></script>
     <script src="../static/js/widgets/ThemeManager.js"></script>
     <script src="../static/js/widgets/AboutDialog.js"></script>
     <script src="../static/js/widgets/PlotDialog.js"></script>
