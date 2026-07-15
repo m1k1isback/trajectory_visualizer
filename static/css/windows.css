@@ -96,17 +96,19 @@ html, body {
     align-items: center;
     justify-content: center;
     background-color: var(--bg-primary, #1e1e1e);
-    min-height: 0;  /* ВАЖНО */
+    min-height: 0;
     overflow: hidden;
+    position: relative;
 }
 
-/* Cesium окно — без центрирования */
+/* Специально для Cesium окна */
 .window-cesium .window-content {
-    align-items: stretch;
-    justify-content: stretch;
-    padding: 0;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    /* УБРАНО: height: 100% !important; width: 100% !important; */
 }
-
 /* Placeholder для пустых окон графиков */
 .window-placeholder {
     display: flex;
@@ -143,4 +145,112 @@ html, body {
     background-color: #000000;
     position: relative;
     min-height: 0;
+}
+
+/* === ГИБКИЕ ПАНЕЛИ === */
+
+/* Левая панель + консоль */
+.sidebar-left-container {
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    min-width: 0;
+}
+
+.sidebar-left {
+    border-right: 1px solid var(--border-color, #3c3c3c);
+    transition: width 0.3s ease;
+}
+
+.sidebar-left.collapsed {
+    width: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden;
+}
+
+/* Консоль прикреплена к левой панели */
+.console-panel {
+    border-top: 1px solid var(--border-color, #3c3c3c);
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-left.collapsed + .console-panel {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Нижняя панель с кнопкой сворачивания */
+.bottom-panel {
+    border-top: 1px solid var(--border-color, #3c3c3c);
+    display: flex;
+    flex-direction: column;
+    transition: height 0.3s ease;
+    min-height: 0;
+}
+
+.bottom-panel.collapsed {
+    height: 40px !important;  /* Только заголовок */
+    overflow: hidden;
+}
+
+.bottom-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-widget-header, #2d2d2d);
+    padding: 0 10px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.bottom-panel-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #858585);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.bottom-panel-toggle:hover {
+    background-color: var(--bg-tertiary, #3c3c3c);
+    color: var(--text-primary, #cccccc);
+    transform: rotate(180deg);
+}
+
+.bottom-panel.collapsed .bottom-panel-toggle {
+    transform: rotate(180deg);
+}
+
+.bottom-panel-content {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Сцена занимает всё оставшееся место */
+.scene-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    background-color: var(--bg-primary, #1e1e1e);
+    padding: 2px;
+    min-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Когда левая панель скрыта — сцена шире */
+.main-container.sidebar-hidden .scene-container {
+    grid-template-columns: 1fr;
+}
+
+/* Когда нижняя панель скрыта — сцена выше */
+.main-container.bottom-hidden .scene-container {
+    grid-template-rows: 1fr;
 }

@@ -68,7 +68,7 @@
         <!-- Кнопка переключения темы -->
         <div style="margin-left: auto; display: flex; align-items: center;">
             <button id="theme-toggle" class="toolbar-btn" onclick="ThemeManager.toggle()" title="Переключить тему">
-                🌙
+                
             </button>
         </div>
     </div>
@@ -76,115 +76,136 @@
     <!-- Основная рабочая область -->
     <div class="main-container">
         
-        <!-- Левая панель -->
-        <div class="sidebar sidebar-left" id="sidebar-left">
-            <div class="panel-widget">
+        <!-- ЛЕВАЯ КОЛОНКА: панель + консоль -->
+        <div class="left-column" id="left-column">
+            
+            <!-- Левая панель -->
+            <div class="sidebar sidebar-left" id="sidebar-left">
+                <div class="panel-widget">
+                    <div class="widget-header">
+                        <span>Инспектор графиков</span>
+                        <button class="widget-toggle" onclick="toggleSidebar('left')" title="Скрыть панель">◀</button>
+                    </div>
+                    <div class="widget-content" id="graph-inspector-widget">
+                        <p>Список графиков:<br><span class="placeholder">(пусто)</span></p>
+                    </div>
+                </div>
+                
+                <div class="panel-widget">
+                    <div class="widget-header">Свойства файла</div>
+                    <div class="widget-content" id="file-properties-widget">
+                        <p><span class="placeholder">(нет данных)</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопка-триггер для левой панели -->
+            <div class="sidebar-trigger sidebar-trigger-left" id="sidebar-trigger-left" onclick="toggleSidebar('left')" style="display: none;">
+                <span>▶</span>
+            </div>
+
+            <!-- Консоль (внизу левой колонки) -->
+            <div class="console-panel" id="console-panel">
                 <div class="widget-header">
-                    <span>Инспектор графиков</span>
-                    <button class="widget-toggle" onclick="toggleSidebar('left')" title="Скрыть панель">◀</button>
+                    <span>КОНСОЛЬ</span>
+                    <button class="widget-toggle" onclick="document.getElementById('console-content').innerHTML = ''" title="Очистить">🗑</button>
                 </div>
-                <div class="widget-content" id="graph-inspector-widget">
-                    <p>Список графиков:<br><span class="placeholder">(пусто)</span></p>
+                <div class="widget-content" id="console-content">
+                    <p>> Система инициализирована. Ожидание действий пользователя...</p>
                 </div>
             </div>
             
-            <div class="panel-widget">
-                <div class="widget-header">Свойства файла</div>
-                <div class="widget-content" id="file-properties-widget">
-                    <p><span class="placeholder">(нет данных)</span></p>
-                </div>
-            </div>
         </div>
+        <!-- /ЛЕВАЯ КОЛОНКА -->
 
-        <!-- Кнопка-триггер для левой панели -->
-        <div class="sidebar-trigger sidebar-trigger-left" id="sidebar-trigger-left" onclick="toggleSidebar('left')" style="display: none;">
-            <span>▶</span>
-        </div>
-
-        <!-- Центральная сцена -->
-        <div class="scene-container" id="scene-container">
+        <!-- ПРАВАЯ ОБЛАСТЬ: сцена + таблица -->
+        <div class="right-area">
             
-            <div class="scene-window" data-window-id="1">
-                <div class="window-header">
-                    <span class="window-title">График 1</span>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="window-close" onclick="PlotManager.clearWindow(1)" title="Очистить">🗑</button>
-                        <button class="window-close" onclick="closeWindow(1)" title="Закрыть">×</button>
+            <!-- Центральная сцена (графики и Cesium) -->
+            <div class="scene-container" id="scene-container">
+                
+                <div class="scene-window" data-window-id="1">
+                    <div class="window-header">
+                        <span class="window-title">График 1</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="window-close" onclick="PlotManager.clearWindow(1)" title="Очистить">🗑</button>
+                            <button class="window-close" onclick="closeWindow(1)" title="Закрыть">×</button>
+                        </div>
+                    </div>
+                    <div class="window-content">
+                        <div class="window-placeholder">2D/3D Viewer</div>
                     </div>
                 </div>
-                <div class="window-content">
-                    <div class="window-placeholder">2D/3D Viewer</div>
-                </div>
-            </div>
 
-            <div class="scene-window" data-window-id="2">
-                <div class="window-header">
-                    <span class="window-title">График 2</span>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="window-close" onclick="PlotManager.clearWindow(2)" title="Очистить">🗑</button>
-                        <button class="window-close" onclick="closeWindow(2)" title="Закрыть">×</button>
+                <div class="scene-window" data-window-id="2">
+                    <div class="window-header">
+                        <span class="window-title">График 2</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="window-close" onclick="PlotManager.clearWindow(2)" title="Очистить"></button>
+                            <button class="window-close" onclick="closeWindow(2)" title="Закрыть">×</button>
+                        </div>
+                    </div>
+                    <div class="window-content">
+                        <div class="window-placeholder">2D/3D Viewer</div>
                     </div>
                 </div>
-                <div class="window-content">
-                    <div class="window-placeholder">2D/3D Viewer</div>
-                </div>
-            </div>
 
-            <div class="scene-window" data-window-id="3">
-                <div class="window-header">
-                    <span class="window-title">График 3</span>
-                    <div style="display: flex; gap: 4px;">
-                        <button class="window-close" onclick="PlotManager.clearWindow(3)" title="Очистить"></button>
-                        <button class="window-close" onclick="closeWindow(3)" title="Закрыть">×</button>
+                <div class="scene-window" data-window-id="3">
+                    <div class="window-header">
+                        <span class="window-title">График 3</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="window-close" onclick="PlotManager.clearWindow(3)" title="Очистить">🗑</button>
+                            <button class="window-close" onclick="closeWindow(3)" title="Закрыть">×</button>
+                        </div>
+                    </div>
+                    <div class="window-content">
+                        <div class="window-placeholder">2D/3D Viewer</div>
                     </div>
                 </div>
-                <div class="window-content">
-                    <div class="window-placeholder">2D/3D Viewer</div>
+
+                <div class="scene-window window-cesium" data-window-id="cesium">
+                    <div class="window-header">
+                        <span class="window-title">Модель Земли</span>
+                        <div style="display: flex; gap: 4px;">
+                            <button class="window-close" onclick="closeWindow('cesium')" title="Закрыть">×</button>
+                        </div>
+                    </div>
+                    <div class="window-content cesium-container" id="cesium-container">
+                    </div>
+                </div>
+
+            </div>
+            <!-- /Центральная сцена -->
+
+            <!-- Нижняя панель (таблица/статистика) — только под сценой -->
+            <div class="bottom-panel" id="bottom-panel">
+                <div class="bottom-panel-header">
+                    <div class="tab-bar">
+                        <button class="tab-btn active" data-tab="table">ТАБЛИЦА</button>
+                        <button class="tab-btn" data-tab="statistics">СТАТИСТИКА</button>
+                    </div>
+                    <button class="bottom-panel-toggle" id="bottom-panel-toggle" onclick="toggleBottomPanel()" title="Скрыть/показать">
+                        ▼
+                    </button>
+                </div>
+                <div class="bottom-panel-content">
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="tab-table">
+                            <div class="tab-placeholder">Таблица данных (загрузите файл)</div>
+                        </div>
+                        <div class="tab-pane" id="tab-statistics">
+                            <div class="tab-placeholder">Статистика (загрузите файл)</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <div class="scene-window window-cesium" data-window-id="cesium">
-    <div class="window-header">
-        <span class="window-title">Модель Земли</span>
-        <div style="display: flex; gap: 4px;">
-            <button class="window-close" onclick="closeWindow('cesium')" title="Закрыть">×</button>
-        </div>
-    </div>
-    <div class="window-content cesium-container" id="cesium-container">
-    </div>
-</div>
+            <!-- /Нижняя панель -->
 
         </div>
+        <!-- /ПРАВАЯ ОБЛАСТЬ -->
 
     </div>
-
-    <!-- Нижняя панель -->
-    <div class="bottom-panel">
-        
-        <div class="bottom-left">
-            <div class="panel-header">
-                <span>КОНСОЛЬ</span>
-                <button class="panel-action" onclick="TabManager.clearConsole()" title="Очистить">×</button>
-            </div>
-            <textarea class="console-output" readonly>Система инициализирована. Ожидание действий пользователя...</textarea>
-        </div>
-        
-        <div class="bottom-right">
-            <div class="tab-bar">
-                <button class="tab-btn active" data-tab="table">ТАБЛИЦА</button>
-                <button class="tab-btn" data-tab="statistics">СТАТИСТИКА</button>
-            </div>
-            <div class="tab-content">
-                <div class="tab-pane active" id="tab-table">
-                    <div class="tab-placeholder">Таблица данных (загрузите файл)</div>
-                </div>
-                <div class="tab-pane" id="tab-statistics">
-                    <div class="tab-placeholder">Статистика (загрузите файл)</div>
-                </div>
-            </div>
-        </div>
-        
-    </div>
+    <!-- /Основная рабочая область -->
 
     <!-- Скрытый input для выбора файла -->
     <input type="file" id="file-input" accept=".csv,.txt,.dat,.tsv" style="display: none;">
@@ -307,5 +328,7 @@
     <!-- Cesium JS -->
     <script src="../static/js/vendor/Cesium/Cesium.js"></script>
     <script src="../static/js/widgets/CesiumViewer.js"></script>
+
+    <script src="../static/js/widgets/PanelManager.js"></script>
 </body>
 </html>

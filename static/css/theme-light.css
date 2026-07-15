@@ -219,3 +219,33 @@ body.light-theme ::-webkit-scrollbar-thumb {
 body.light-theme ::-webkit-scrollbar-thumb:hover {
     background: #a0a0a0;
 }
+
+/* === КОНСОЛЬ В СВЕТЛОЙ ТЕМЕ === */
+body.light-theme .console-panel {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+body.light-theme .console-panel .widget-header {
+    background: var(--bg-widget-header);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.light-theme .console-panel .widget-content {
+    background: var(--bg-primary); /* Белый фон в светлой теме */
+    color: var(--text-primary);
+}
+
+/* В светлой теме делаем цвета логов чуть темнее для читаемости на белом */
+body.light-theme .console-panel .widget-content p.log-info {
+    color: #008000; /* Тёмно-зелёный */
+}
+
+body.light-theme .console-panel .widget-content p.log-warning {
+    color: #996600; /* Тёмно-жёлтый/оранжевый */
+}
+
+body.light-theme .console-panel .widget-content p.log-error {
+    color: #cc0000; /* Тёмно-красный */
+}

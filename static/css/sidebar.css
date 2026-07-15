@@ -1,19 +1,67 @@
-/* Sidebar.css - Стили боковых панелей */
+/* Sidebar.css - Стили боковых и нижней панелей */
+
+/* === ГЛАВНАЯ РАСКЛАДКА === */
+html, body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar {
+    flex-shrink: 0;
+}
+
+.main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* === ЛЕВАЯ КОЛОНКА === */
+.left-column {
+    display: flex;
+    flex-direction: column;
+    width: 280px;
+    flex-shrink: 0;
+    transition: width 0.3s ease;
+    border-right: 1px solid #3c3c3c;
+    background: #252526;
+    overflow: hidden;
+}
+
+.left-column.collapsed {
+    width: 0 !important;
+    overflow: hidden;
+    border: none !important;
+}
+
+/* === ПРАВАЯ ОБЛАСТЬ (сцена + таблица) === */
+.right-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
 
 /* === ОБЩИЕ СТИЛИ ПАНЕЛЕЙ === */
-
 .sidebar {
     background: #252526;
-    border-right: 1px solid #3c3c3c;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    transition: width 0.3s ease;
+    flex-shrink: 0;
 }
 
 .sidebar-left {
-    width: 280px;
-    border-right: 1px solid #3c3c3c;
+    flex: 1;
+    min-height: 0;
+    border-right: none;
 }
 
 .sidebar-right {
@@ -22,19 +70,72 @@
     border-right: none;
 }
 
-/* === СКРЫТЫЕ ПАНЕЛИ === */
-
 .sidebar.collapsed {
-    width: 0;
+    width: 0 !important;
     overflow: hidden;
-    border: none;
+    border: none !important;
+    opacity: 0;
+}
+
+/* === КОНСОЛЬ === */
+.console-panel {
+    height: 150px;
+    background: var(--bg-secondary, #252526); /* Используем переменную темы */
+    border-top: 1px solid var(--border-color, #3c3c3c);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.left-column.collapsed .console-panel {
+    display: none;
+}
+
+.console-panel .widget-header {
+    background: var(--bg-widget-header, #2d2d2d);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-primary, #cccccc);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color, #3c3c3c);
+    flex-shrink: 0;
+}
+
+.console-panel .widget-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    font-family: monospace;
+    font-size: 11px;
+    background: var(--bg-primary, #1e1e1e); /* Фон как у основной сцены */
+}
+
+.console-panel .widget-content p {
+    margin: 2px 0;
+    word-wrap: break-word;
+}
+
+/* Цвета сообщений в консоли через переменные */
+.console-panel .widget-content p.log-info {
+    color: var(--success-color, #4ec9b0);
+}
+
+.console-panel .widget-content p.log-warning {
+    color: var(--warning-color, #dcdcaa);
+}
+
+.console-panel .widget-content p.log-error {
+    color: var(--danger-color, #f44747);
 }
 
 /* === КНОПКИ-ТРИГГЕРЫ === */
-
 .sidebar-trigger {
     position: absolute;
-    top: 50%;
+    top: 30%;
     transform: translateY(-50%);
     background: #2d2d2d;
     border: 1px solid #3c3c3c;
@@ -42,10 +143,10 @@
     padding: 8px 4px;
     cursor: pointer;
     z-index: 100;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    border-radius: 3px;
+    border-radius: 0 4px 4px 0;
     transition: background 0.2s;
 }
 
@@ -59,10 +160,86 @@
 
 .sidebar-trigger-right {
     right: 0;
+    border-radius: 4px 0 0 4px;
+    border-right: 1px solid #3c3c3c;
+    border-left: none;
 }
 
-/* === ВИДЖЕТЫ ПАНЕЛЕЙ === */
+/* === НИЖНЯЯ ПАНЕЛЬ === */
+.bottom-panel {
+    background: #252526;
+    border-top: 1px solid #3c3c3c;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    transition: height 0.3s ease;
+    height: 250px;
+    min-height: 40px;
+}
 
+.bottom-panel.collapsed {
+    height: 40px !important;
+    overflow: hidden;
+}
+
+.bottom-panel-header {
+    background: #2d2d2d;
+    padding: 0 12px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 1px solid #3c3c3c;
+}
+
+.bottom-panel.collapsed .bottom-panel-header {
+    border-bottom: none;
+}
+
+.bottom-panel-toggle {
+    background: transparent;
+    border: none;
+    color: #cccccc;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 16px;
+    border-radius: 4px;
+    transition: transform 0.3s ease, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bottom-panel-toggle:hover {
+    background: #3c3c3c;
+}
+
+.bottom-panel.collapsed .bottom-panel-toggle {
+    transform: rotate(180deg);
+}
+
+.bottom-panel-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* === СЦЕНА === */
+.scene-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    background-color: #1e1e1e;
+    padding: 2px;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* === ВИДЖЕТЫ === */
 .panel-widget {
     background: #252526;
     border-bottom: 1px solid #3c3c3c;
@@ -70,21 +247,17 @@
     flex-direction: column;
 }
 
-/* Первый виджет (Инспектор графиков) — фиксированная высота */
 .sidebar-left .panel-widget:nth-child(1) {
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 100px;
 }
 
-/* Второй виджет (Свойства файла) — фиксированная высота */
 .sidebar-left .panel-widget:nth-child(2) {
     flex: 0 0 auto;
     max-height: 120px;
     overflow-y: auto;
 }
-
-/* === ЗАГОЛОВОК ВИДЖЕТА === */
 
 .widget-header {
     background: #2d2d2d;
@@ -112,8 +285,6 @@
     border-radius: 3px;
 }
 
-/* === СОДЕРЖИМОЕ ВИДЖЕТА === */
-
 .widget-content {
     padding: 12px;
     font-size: 12px;
@@ -129,8 +300,6 @@
     color: #858585;
     font-style: italic;
 }
-
-/* === ПРАВАЯ ПАНЕЛЬ === */
 
 .sidebar-right .panel-widget {
     flex: 0 0 auto;
