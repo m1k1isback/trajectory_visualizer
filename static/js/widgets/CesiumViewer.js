@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * CesiumViewer.js — ОФФЛАЙН версия с текстурой Земли
+ * CesiumViewer.js — ОФФЛАЙН версия с tooltip и цветами
  * ============================================================================
  */
 
@@ -8,6 +8,8 @@ const CesiumViewer = {
     viewer: null,
     containerId: 'cesium-container',
     initialized: false,
+    trajectoryCounter: 0,
+    trajectoryColors: {},
 
     /**
      * Инициализировать Cesium Viewer.
@@ -70,6 +72,9 @@ const CesiumViewer = {
 
             // Настраиваем сцену
             this.configureViewer();
+            
+            // Добавляем tooltip
+            this.setupTooltip();
 
             // Фиксируем высоту
             container.style.height = '100%';
@@ -127,7 +132,7 @@ const CesiumViewer = {
         
         // Чувствительность
         controller.zoomFactor = 0.5;
-        controller.inertiaSpin = 0.0;  // Отключаем инерцию для отзывчивости
+        controller.inertiaSpin = 0.0;
         controller.inertiaTranslate = 0.0;
         controller.inertiaZoom = 0.0;
         
@@ -161,149 +166,101 @@ const CesiumViewer = {
     },
 
     /**
-     * Добавить кнопки управления.
+     * Настроить tooltip при наведении.
      */
-        /**
-     * Добавить кнопки управления.
+    setupTooltip: function() {
+        if (!this.viewer) return;
+
+        const handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+        const tooltip = document.createElement('div');
+        tooltip.id = 'cesium-tooltip';
+        tooltip.style.cssText = `
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        `;
+        document.body.appendChild(tooltip);
+
+        let hoveredEntity = null;
+
+        handler.setInputAction(function(movement) {
+            const pickedObjects = this.viewer.scene.drillPick(movement.endPosition);
+            let foundTrajectory = null;
+
+            if (pickedObjects && pickedObjects.length > 0) {
+                for (let i = 0; i < pickedObjects.length; i++) {
+                    const primitive = pickedObjects[i].primitive;
+                    // Проверяем entity или primitive
+                    const entity = pickedObjects[i].id;
+                    
+                    if (entity && entity.trajectoryData) {
+                        foundTrajectory = entity;
+                        break;
+                    }
+                    if (primitive && primitive.id && primitive.id.trajectoryData) {
+                        foundTrajectory = primitive.id;
+                        break;
+                    }
+                }
+            }
+
+            if (foundTrajectory && foundTrajectory !== hoveredEntity) {
+                hoveredEntity = foundTrajectory;
+                const data = foundTrajectory.trajectoryData;
+                
+                tooltip.innerHTML = '<strong>' + (data.fileName || 'Траектория') + '</strong><br>' +
+                                   'Точек: ' + (data.pointCount || 0);
+                tooltip.style.display = 'block';
+                tooltip.style.left = (movement.endPosition.x + 15) + 'px';
+                tooltip.style.top = (movement.endPosition.y + 15) + 'px';
+            } else if (!foundTrajectory && hoveredEntity) {
+                hoveredEntity = null;
+                tooltip.style.display = 'none';
+            } else if (hoveredEntity) {
+                tooltip.style.left = (movement.endPosition.x + 15) + 'px';
+                tooltip.style.top = (movement.endPosition.y + 15) + 'px';
+            }
+
+        }.bind(this), Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+
+        handler.setInputAction(function() {
+            tooltip.style.display = 'none';
+            hoveredEntity = null;
+        }, Cesium.ScreenSpaceEventType.MOUSE_LEAVE);
+
+        console.log('[CesiumViewer] Tooltip настроен');
+    },
+
+    /**
+     * Получить цвет для траектории.
      */
-    addControlButtons: function() {
-        const container = document.getElementById(this.containerId);
-        if (!container) return;
-
-        // Проверяем нет ли уже кнопок
-        if (container.querySelector('.cesium-controls')) return;
-
-        const div = document.createElement('div');
-        div.className = 'cesium-controls';
-        // ВАЖНО: pointer-events: none на контейнере, чтобы клики проходили сквозь
-        div.style.cssText = 
-            'position: absolute; top: 10px; right: 10px; z-index: 1000; ' +
-            'display: flex; flex-direction: column; gap: 5px; ' +
-            'pointer-events: none;';  // Контейнер пропускает клики
-
-        const buttons = [
-            { icon: '🏠', title: 'Домой', action: () => this.goHome() },
-            { icon: '+', title: 'Приблизить', action: () => this.zoomIn() },
-            { icon: '🔍-', title: 'Отдалить', action: () => this.zoomOut() },
+    getTrajectoryColor: function(datasetId) {
+        // Используем палитру из PlotManager если есть
+        const curveColors = window.CURVE_COLORS || [
+            '#4ec9b0', '#569cd6', '#ce9178', '#c586c0', '#dcdcaa',
+            '#f44747', '#9cdcfe', '#d4d4d4', '#b5cea8', '#d16969'
         ];
 
-        buttons.forEach(btn => {
-            const button = document.createElement('button');
-            button.innerHTML = btn.icon;
-            button.title = btn.title;
-            button.style.cssText = 
-                'background: rgba(30,30,30,0.8); border: 1px solid rgba(255,255,255,0.2); ' +
-                'color: white; padding: 8px; border-radius: 4px; cursor: pointer; ' +
-                'font-size: 16px; width: 40px; height: 40px; z-index: 1001; ' +
-                'pointer-events: auto;';  // ВАЖНО: кнопки получают клики
-            button.onclick = btn.action;
-            div.appendChild(button);
-        });
-
-        container.appendChild(div);
-        console.log('[CesiumViewer] Кнопки управления добавлены');
-    },
-
-    /**
-     * Домой.
-     */
-    goHome: function() {
-        if (!this.viewer) return;
-        this.viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(0, 0, 25000000),
-            orientation: {
-                heading: Cesium.Math.toRadians(0),
-                pitch: Cesium.Math.toRadians(-90),
-                roll: 0
-            },
-            duration: 1.5
-        });
-    },
-
-    /**
-     * Приблизить.
-     */
-    zoomIn: function() {
-        if (!this.viewer) return;
-        const camera = this.viewer.camera;
-        const height = camera.positionCartographic.height;
-        camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(
-                Cesium.Math.toDegrees(camera.positionCartographic.longitude),
-                Cesium.Math.toDegrees(camera.positionCartographic.latitude),
-                Math.max(height * 0.6, 7000000)
-            ),
-            duration: 1
-        });
-    },
-
-    /**
-     * Отдалить.
-     */
-    zoomOut: function() {
-        if (!this.viewer) return;
-        const camera = this.viewer.camera;
-        const height = camera.positionCartographic.height;
-        camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(
-                Cesium.Math.toDegrees(camera.positionCartographic.longitude),
-                Cesium.Math.toDegrees(camera.positionCartographic.latitude),
-                Math.min(height * 1.5, 50000000)
-            ),
-            duration: 1
-        });
-    },
-
-    /**
-     * Добавить траекторию.
-     */
-    addTrajectory: function(positions, options) {
-        if (!this.viewer) {
-            console.error('[CesiumViewer] Viewer не инициализирован');
-            return null;
+        if (this.trajectoryColors[datasetId]) {
+            return this.trajectoryColors[datasetId];
         }
 
-        const opts = options || {};
-        const color = opts.color || Cesium.Color.GREEN;
-        const width = opts.width || 3;
-        const id = opts.id || 'trajectory-' + Date.now();
-
-        const cartesianPositions = positions.map(pos => 
-            new Cesium.Cartesian3(pos.x, pos.y, pos.z)
-        );
-
-        const polyline = this.viewer.entities.add({
-            id: id,
-            polyline: {
-                positions: cartesianPositions,
-                width: width,
-                material: color,
-            }
-        });
-
-        console.log('[CesiumViewer] Траектория добавлена:', id);
-        this.viewer.zoomTo(polyline);
-
-        return polyline;
-    },
-
-    /**
-     * Удалить траекторию.
-     */
-    removeTrajectory: function(id) {
-        if (!this.viewer) return;
-        const entity = this.viewer.entities.getById(id);
-        if (entity) {
-            this.viewer.entities.remove(entity);
-        }
-    },
-
-    /**
-     * Очистить траектории.
-     */
-    clearTrajectories: function() {
-        if (!this.viewer) return;
-        this.viewer.entities.removeAll();
+        const colorIndex = Object.keys(this.trajectoryColors).length % curveColors.length;
+        const hexColor = curveColors[colorIndex];
+        const cesiumColor = Cesium.Color.fromCssColorString(hexColor);
+        
+        this.trajectoryColors[datasetId] = cesiumColor;
+        
+        return cesiumColor;
     },
 
     /**
@@ -328,13 +285,60 @@ const CesiumViewer = {
             console.log('[CesiumViewer] Получено точек:', data.points);
 
             if (data.trajectory && data.trajectory.length > 0) {
+                // Очищаем старые
                 this.clearTrajectories();
-                this.addTrajectory(data.trajectory, {
-                    color: Cesium.Color.GREEN,
-                    width: 3,
-                    id: 'main-trajectory'
+
+                // Получаем цвет
+                const color = this.getTrajectoryColor(datasetId);
+                const dataset = window.datasets[datasetId];
+                const fileName = dataset ? dataset.name : 'Траектория';
+
+                // Создаем polyline
+                const entity = this.viewer.entities.add({
+                    id: 'trajectory-' + datasetId,
+                    trajectoryData: {
+                        fileName: fileName,
+                        pointCount: data.points,
+                        datasetId: datasetId
+                    },
+                    polyline: {
+                        positions: data.trajectory.map(pos => 
+                            new Cesium.Cartesian3(pos.x, pos.y, pos.z)
+                        ),
+                        width: 3,
+                        material: color,
+                        clampToGround: false
+                    }
                 });
+
+                // Добавляем невидимые точки для picking (каждую 5-ю точку)
+                const step = Math.max(1, Math.floor(data.trajectory.length / 50));
                 
+                for (let i = 0; i < data.trajectory.length; i += step) {
+                    const pos = data.trajectory[i];
+                    this.viewer.entities.add({
+                        id: 'trajectory-' + datasetId + '-point-' + i,
+                        position: new Cesium.Cartesian3(pos.x, pos.y, pos.z),
+                        point: {
+                            pixelSize: 15,  // Большой размер для удобного picking
+                            color: Cesium.Color.TRANSPARENT,  // Невидимый
+                            outlineColor: Cesium.Color.TRANSPARENT,
+                            outlineWidth: 0,
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY
+                        },
+                        trajectoryData: {
+                            fileName: fileName,
+                            pointCount: data.points,
+                            datasetId: datasetId
+                        }
+                    });
+                }
+
+                // Зум на траекторию
+                setTimeout(function() {
+                    this.viewer.zoomTo(entity);
+                }.bind(this), 300);
+
                 if (window.TabManager) {
                     TabManager.logToConsole('Траектория: ' + data.points + ' точек');
                 }
@@ -347,6 +351,118 @@ const CesiumViewer = {
         }
     },
 
+    /**
+     * Удалить траекторию.
+     */
+    removeTrajectory: function(trajectoryId) {
+        if (!this.viewer) return;
+        
+        // Удаляем основную траекторию
+        const entity = this.viewer.entities.getById(trajectoryId);
+        if (entity) {
+            this.viewer.entities.remove(entity);
+        }
+
+        // Удаляем picking точки
+        let i = 0;
+        while (true) {
+            const point = this.viewer.entities.getById(trajectoryId + '-point-' + i);
+            if (!point) break;
+            this.viewer.entities.remove(point);
+            i++;
+        }
+
+        console.log('[CesiumViewer] Траектория удалена:', trajectoryId);
+    },
+
+    /**
+     * Очистить траектории.
+     */
+    clearTrajectories: function() {
+        if (!this.viewer) return;
+        this.viewer.entities.removeAll();
+    },
+
+    /**
+     * Добавить кнопки управления.
+     */
+    addControlButtons: function() {
+        const container = document.getElementById(this.containerId);
+        if (!container) return;
+
+        if (container.querySelector('.cesium-controls')) return;
+
+        const div = document.createElement('div');
+        div.className = 'cesium-controls';
+        div.style.cssText = 
+            'position: absolute; top: 10px; right: 10px; z-index: 1000; ' +
+            'display: flex; flex-direction: column; gap: 5px; ' +
+            'pointer-events: none;';
+
+        const buttons = [
+            { icon: '🏠', title: 'Домой', action: () => this.goHome() },
+            { icon: '+', title: 'Приблизить', action: () => this.zoomIn() },
+            { icon: '🔍-', title: 'Отдалить', action: () => this.zoomOut() },
+        ];
+
+        buttons.forEach(btn => {
+            const button = document.createElement('button');
+            button.innerHTML = btn.icon;
+            button.title = btn.title;
+            button.style.cssText = 
+                'background: rgba(30,30,30,0.8); border: 1px solid rgba(255,255,255,0.2); ' +
+                'color: white; padding: 8px; border-radius: 4px; cursor: pointer; ' +
+                'font-size: 16px; width: 40px; height: 40px; z-index: 1001; ' +
+                'pointer-events: auto;';
+            button.onclick = btn.action;
+            div.appendChild(button);
+        });
+
+        container.appendChild(div);
+        console.log('[CesiumViewer] Кнопки управления добавлены');
+    },
+
+    goHome: function() {
+        if (!this.viewer) return;
+        this.viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(0, 0, 25000000),
+            orientation: {
+                heading: Cesium.Math.toRadians(0),
+                pitch: Cesium.Math.toRadians(-90),
+                roll: 0
+            },
+            duration: 1.5
+        });
+    },
+
+    zoomIn: function() {
+        if (!this.viewer) return;
+        const camera = this.viewer.camera;
+        const height = camera.positionCartographic.height;
+        camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(
+                Cesium.Math.toDegrees(camera.positionCartographic.longitude),
+                Cesium.Math.toDegrees(camera.positionCartographic.latitude),
+                Math.max(height * 0.6, 7000000)
+            ),
+            duration: 1
+        });
+    },
+
+    zoomOut: function() {
+        if (!this.viewer) return;
+        const camera = this.viewer.camera;
+        const height = camera.positionCartographic.height;
+        camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(
+                Cesium.Math.toDegrees(camera.positionCartographic.longitude),
+                Cesium.Math.toDegrees(camera.positionCartographic.latitude),
+                Math.min(height * 1.5, 50000000)
+            ),
+            duration: 1
+        });
+    },
+
     resize: function() {
         if (this.viewer) this.viewer.resize();
     },
@@ -354,6 +470,8 @@ const CesiumViewer = {
     clear: function() {
         if (!this.viewer) return;
         this.viewer.entities.removeAll();
+        this.trajectoryCounter = 0;
+        this.trajectoryColors = {};
     }
 };
 
