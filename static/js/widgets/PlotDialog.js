@@ -8,12 +8,49 @@ const PlotDialog = {
     currentGraphId: null,
 
     /**
+     * Заполнить список файлов.
+     */
+    populateFileSelect: function() {
+        var select = document.getElementById('plot-dataset-select');
+        if (!select) return;
+
+        select.innerHTML = '';
+        
+        var datasets = window.datasets || {};
+        var keys = Object.keys(datasets);
+        
+        if (keys.length === 0) {
+            select.innerHTML = '<option value="">(нет загруженных файлов)</option>';
+            return;
+        }
+
+        keys.forEach(function(id) {
+            var dataset = datasets[id];
+            var selected = (id === window.activeDatasetId) ? 'selected' : '';
+            select.innerHTML += '<option value="' + id + '" ' + selected + '>' + dataset.name + '</option>';
+        });
+
+        // При смене файла обновляем переменные
+        var self = this;
+        select.onchange = function() {
+            self.populateVariables();
+            // Обновляем секцию стилей если диалог уже открыт
+            var ySelect = document.getElementById('plot-y-variables');
+            if (ySelect) {
+                var selected = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
+                self.refreshCurveStyles(selected, self.currentGraphId ? PlotManager.graphs[self.currentGraphId] : null);
+            }
+        };
+    },
+
+    /**
      * Открыть диалог создания нового графика.
      */
     open: function() {
         this.currentGraphId = null;
         document.getElementById('plot-dialog-title').textContent = 'Создание графика';
 
+        this.populateFileSelect(); // ← ДОБАВЛЕНО
         this.populateVariables();
         this.populateWindows();
 
@@ -47,6 +84,7 @@ const PlotDialog = {
         this.currentGraphId = graphId;
         document.getElementById('plot-dialog-title').textContent = 'Редактирование графика';
 
+        this.populateFileSelect(); // ← ДОБАВЛЕНО
         this.populateVariables();
         this.populateWindows();
 
@@ -59,6 +97,11 @@ const PlotDialog = {
 
         document.getElementById('plot-title').value = graph.title || '';
         document.getElementById('plot-window').value = graph.windowId;
+
+        // Установить выбранный файл
+        if (graph.dataset_id) {
+            document.getElementById('plot-dataset-select').value = graph.dataset_id;
+        }
 
         // Показать секцию стилей с текущими настройками
         this.refreshCurveStyles(graph.yVariables, graph);
@@ -90,13 +133,21 @@ const PlotDialog = {
         xSelect.innerHTML = '';
         ySelect.innerHTML = '';
 
-        if (!window.currentDatasetColumns || currentDatasetColumns.length === 0) {
+        // Получаем ID выбранного файла
+        var datasetSelect = document.getElementById('plot-dataset-select');
+        var datasetId = datasetSelect ? datasetSelect.value : window.activeDatasetId;
+        var dataset = window.datasets[datasetId];
+
+        // Если файла нет — используем старый метод для совместимости
+        var columns = dataset ? dataset.column_names : window.currentDatasetColumns;
+        
+        if (!columns || columns.length === 0) {
             xSelect.innerHTML = '<option value="">(нет данных)</option>';
             ySelect.innerHTML = '<option value="">(нет данных)</option>';
             return;
         }
 
-        currentDatasetColumns.forEach(function(col) {
+        columns.forEach(function(col) {
             xSelect.innerHTML += '<option value="' + col + '">' + col + '</option>';
             ySelect.innerHTML += '<option value="' + col + '">' + col + '</option>';
         });
@@ -232,6 +283,10 @@ const PlotDialog = {
      * Создать или обновить график.
      */
     create: function() {
+        // ← ДОБАВЛЕНО: Получаем ID выбранного файла
+        var datasetSelect = document.getElementById('plot-dataset-select');
+        var datasetId = datasetSelect ? datasetSelect.value : window.activeDatasetId;
+
         var xVariable = document.getElementById('plot-x-variable').value;
         var ySelect = document.getElementById('plot-y-variables');
         var yVariables = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
@@ -267,7 +322,8 @@ const PlotDialog = {
             PlotManager.createPlot(
                 xVariable, yVariables, title, targetWindow,
                 styles.curveColors, styles.lineStyles, styles.lineWidths,
-                styles.markerSymbols, styles.markerSizes, styles.markerSteps
+                styles.markerSymbols, styles.markerSizes, styles.markerSteps,
+                datasetId // ← ДОБАВЛЕНО: передаем ID файла
             );
         }
 

@@ -281,6 +281,12 @@
             </div>
             
             <div style="padding: 24px;">
+                <!-- === ДОБАВЛЕНО: Выбор файла === -->
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; color: var(--text-primary, #cccccc); margin-bottom: 8px; font-size: 14px;">Источник данных:</label>
+                    <select id="plot-dataset-select" style="width: 100%; padding: 8px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #cccccc); border: 1px solid var(--border-color, #555); border-radius: 4px; font-size: 14px;"></select>
+                </div>
+
                 <div style="margin-bottom: 16px;">
                     <label style="display: block; color: var(--text-primary, #cccccc); margin-bottom: 8px; font-size: 14px;">Ось X (аргумент):</label>
                     <select id="plot-x-variable" style="width: 100%; padding: 8px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #cccccc); border: 1px solid var(--border-color, #555); border-radius: 4px; font-size: 14px;"></select>
@@ -308,7 +314,7 @@
                 </div>
 
                 <div id="curve-colors-section" style="margin-bottom: 16px; display: none;">
-                    <label style="display: block; color: var(--text-primary, #cccccc); margin-bottom: 8px; font-size: 14px;">Цвета кривых:</label>
+                    <label style="display: block; color: var(--text-primary, #cccccc); margin-bottom: 8px; font-size: 14px;">Цвета и стили кривых:</label>
                     <div id="curve-colors-container" style="padding: 8px; background: var(--bg-tertiary, #2d2d2d); border-radius: 4px;">
                     </div>
                 </div>
