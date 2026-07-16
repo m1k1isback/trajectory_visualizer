@@ -263,7 +263,7 @@ const CesiumViewer = {
         return cesiumColor;
     },
 
-    /**
+        /**
      * Загрузить траекторию из файла.
      */
     loadTrajectoryFromFile: async function(datasetId) {
@@ -285,8 +285,8 @@ const CesiumViewer = {
             console.log('[CesiumViewer] Получено точек:', data.points);
 
             if (data.trajectory && data.trajectory.length > 0) {
-                // Очищаем старые
-                this.clearTrajectories();
+                // === ИСПРАВЛЕНО: Удаляем ТОЛЬКО траекторию этого файла ===
+                this.removeTrajectory('trajectory-' + datasetId);
 
                 // Получаем цвет
                 const color = this.getTrajectoryColor(datasetId);
@@ -311,7 +311,7 @@ const CesiumViewer = {
                     }
                 });
 
-                // Добавляем невидимые точки для picking (каждую 5-ю точку)
+                // Добавляем невидимые точки для picking
                 const step = Math.max(1, Math.floor(data.trajectory.length / 50));
                 
                 for (let i = 0; i < data.trajectory.length; i += step) {
@@ -320,8 +320,8 @@ const CesiumViewer = {
                         id: 'trajectory-' + datasetId + '-point-' + i,
                         position: new Cesium.Cartesian3(pos.x, pos.y, pos.z),
                         point: {
-                            pixelSize: 15,  // Большой размер для удобного picking
-                            color: Cesium.Color.TRANSPARENT,  // Невидимый
+                            pixelSize: 15,
+                            color: Cesium.Color.TRANSPARENT,
                             outlineColor: Cesium.Color.TRANSPARENT,
                             outlineWidth: 0,
                             disableDepthTestDistance: Number.POSITIVE_INFINITY

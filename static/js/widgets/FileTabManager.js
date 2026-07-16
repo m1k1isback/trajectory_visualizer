@@ -65,72 +65,67 @@ const FileTabManager = {
         }
     },
     
-    /**
-     * Удалить файл.
-     */
-    removeFile: function(datasetId) {
-    const datasets = window.datasets || {};
-    const dataset = datasets[datasetId];
-    
-    if (!dataset) return;
-    
-    // Проверяем есть ли графики этого файла
-    const hasGraphs = Object.values(window.PlotManager.graphs || {}).some(g => g.dataset_id === datasetId);
-    
-    let confirmMsg = 'Удалить файл "' + dataset.name + '"?';
-    if (hasGraphs) {
-        confirmMsg += '\n\nВНИМАНИЕ: Будут удалены все графики этого файла!';
-    }
-    
-    if (!confirm(confirmMsg)) return;
-    
-    // Удаляем графики этого файла
-    if (hasGraphs && window.PlotManager) {
-        // Используем новую функцию removeGraphsByDataset
-        if (PlotManager.removeGraphsByDataset) {
-            PlotManager.removeGraphsByDataset(datasetId);
-        } else {
-            // Fallback если функция еще не добавлена
-            Object.keys(window.PlotManager.graphs).forEach(function(graphId) {
-                const graph = window.PlotManager.graphs[graphId];
-                if (graph.dataset_id === datasetId) {
-                    window.PlotManager.removeGraph(graphId);
-                }
-            });
+        removeFile: function(datasetId) {
+        const datasets = window.datasets || {};
+        const dataset = datasets[datasetId];
+        
+        if (!dataset) return;
+        
+        // Проверяем есть ли графики этого файла
+        const hasGraphs = Object.values(window.PlotManager.graphs || {}).some(g => g.dataset_id === datasetId);
+        
+        let confirmMsg = 'Удалить файл "' + dataset.name + '"?';
+        if (hasGraphs) {
+            confirmMsg += '\n\nВНИМАНИЕ: Будут удалены все графики этого файла!';
+        }
+        
+        if (!confirm(confirmMsg)) return;
+        
+        // Удаляем графики этого файла
+        if (hasGraphs && window.PlotManager) {
+            if (PlotManager.removeGraphsByDataset) {
+                PlotManager.removeGraphsByDataset(datasetId);
+            } else {
+                Object.keys(window.PlotManager.graphs).forEach(function(graphId) {
+                    const graph = window.PlotManager.graphs[graphId];
+                    if (graph.dataset_id === datasetId) {
+                        window.PlotManager.removeGraph(graphId);
+                    }
+                });
+            }
+        }
+        
+        // === Удаляем траекторию из Cesium ===
+        if (window.CesiumViewer) {
+            CesiumViewer.removeTrajectory('trajectory-' + datasetId);
+            // === ИСПРАВЛЕНО: Удаляем цвет из хранилища ===
+            if (CesiumViewer.trajectoryColors) {
+                delete CesiumViewer.trajectoryColors[datasetId];
+            }
+        }
+        
+        // Удаляем из datasets
+        delete window.datasets[datasetId];
+        
+        // Если удалили активный — переключаемся на другой
+        if (window.activeDatasetId === datasetId) {
+            const remainingIds = Object.keys(window.datasets);
+            if (remainingIds.length > 0) {
+                this.switchFile(remainingIds[0]);
+            } else {
+                window.activeDatasetId = null;
+                window.currentDatasetId = null;
+                window.currentDatasetColumns = null;
+        }
+        }
+        
+        // Обновляем вкладки
+        this.updateTabs();
+        
+        if (window.TabManager) {
+            TabManager.logToConsole('Файл "' + dataset.name + '" удалён');
         }
     }
-    
-    // === ДОБАВЛЕНО: Удаляем траекторию из Cesium ===
-    if (window.CesiumViewer) {
-        CesiumViewer.removeTrajectory('trajectory-' + datasetId);
-        // Также удаляем цвет из хранилища
-        if (CesiumViewer.trajectoryColors) {
-            delete CesiumViewer.trajectoryColors[datasetId];
-        }
-    }
-    
-    // Удаляем из datasets
-    delete window.datasets[datasetId];
-    
-    // Если удалили активный — переключаемся на другой
-    if (window.activeDatasetId === datasetId) {
-        const remainingIds = Object.keys(window.datasets);
-        if (remainingIds.length > 0) {
-            this.switchFile(remainingIds[0]);
-        } else {
-            window.activeDatasetId = null;
-            window.currentDatasetId = null;
-            window.currentDatasetColumns = null;
-        }
-    }
-    
-    // Обновляем вкладки
-    this.updateTabs();
-    
-    if (window.TabManager) {
-        TabManager.logToConsole('Файл "' + dataset.name + '" удалён');
-    }
-}
 };
 
 window.FileTabManager = FileTabManager;
