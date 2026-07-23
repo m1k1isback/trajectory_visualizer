@@ -168,29 +168,41 @@ const CesiumViewer = {
         }.bind(this));
     },
 
-    /**
+        /**
      * Настроить tooltip при наведении.
      */
     setupTooltip: function() {
         if (!this.viewer) return;
 
-        var handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
-        var tooltip = document.createElement('div');
+        const handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+        const tooltip = document.createElement('div');
         tooltip.id = 'cesium-tooltip';
-        tooltip.style.cssText = 'position: absolute; background: rgba(0, 0, 0, 0.85); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; pointer-events: none; z-index: 10000; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);';
+        tooltip.style.cssText = `
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        `;
         document.body.appendChild(tooltip);
 
-        var hoveredEntity = null;
-        var self = this;
+        let hoveredEntity = null;
 
         handler.setInputAction(function(movement) {
-            var pickedObjects = self.viewer.scene.drillPick(movement.endPosition);
-            var foundTrajectory = null;
+            const pickedObjects = this.viewer.scene.drillPick(movement.endPosition);
+            let foundTrajectory = null;
 
             if (pickedObjects && pickedObjects.length > 0) {
-                for (var i = 0; i < pickedObjects.length; i++) {
-                    var primitive = pickedObjects[i].primitive;
-                    var entity = pickedObjects[i].id;
+                for (let i = 0; i < pickedObjects.length; i++) {
+                    const primitive = pickedObjects[i].primitive;
+                    const entity = pickedObjects[i].id;
                     
                     if (entity && entity.trajectoryData) {
                         foundTrajectory = entity;
@@ -203,24 +215,30 @@ const CesiumViewer = {
                 }
             }
 
+            // === ИСПРАВЛЕНИЕ: Получаем позицию канваса ===
+            const canvas = this.viewer.scene.canvas;
+            const canvasRect = canvas.getBoundingClientRect();
+            
             if (foundTrajectory && foundTrajectory !== hoveredEntity) {
                 hoveredEntity = foundTrajectory;
-                var data = foundTrajectory.trajectoryData;
+                const data = foundTrajectory.trajectoryData;
                 
                 tooltip.innerHTML = '<strong>' + (data.fileName || 'Траектория') + '</strong><br>' +
                                    'Точек: ' + (data.pointCount || 0);
                 tooltip.style.display = 'block';
-                tooltip.style.left = (movement.endPosition.x + 15) + 'px';
-                tooltip.style.top = (movement.endPosition.y + 15) + 'px';
+                // === ИСПРАВЛЕНИЕ: Позиционируем относительно документа ===
+                tooltip.style.left = (movement.endPosition.x + canvasRect.left + 15) + 'px';
+                tooltip.style.top = (movement.endPosition.y + canvasRect.top + 15) + 'px';
             } else if (!foundTrajectory && hoveredEntity) {
                 hoveredEntity = null;
                 tooltip.style.display = 'none';
             } else if (hoveredEntity) {
-                tooltip.style.left = (movement.endPosition.x + 15) + 'px';
-                tooltip.style.top = (movement.endPosition.y + 15) + 'px';
+                // === ИСПРАВЛЕНИЕ: Обновляем позицию при движении мыши ===
+                tooltip.style.left = (movement.endPosition.x + canvasRect.left + 15) + 'px';
+                tooltip.style.top = (movement.endPosition.y + canvasRect.top + 15) + 'px';
             }
 
-        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        }.bind(this), Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
         handler.setInputAction(function() {
             tooltip.style.display = 'none';
