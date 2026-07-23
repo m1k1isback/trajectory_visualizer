@@ -7,9 +7,6 @@
 const PlotDialog = {
     currentGraphId: null,
 
-    /**
-     * Заполнить список файлов.
-     */
     populateFileSelect: function() {
         var select = document.getElementById('plot-dataset-select');
         if (!select) return;
@@ -30,11 +27,9 @@ const PlotDialog = {
             select.innerHTML += '<option value="' + id + '" ' + selected + '>' + dataset.name + '</option>';
         });
 
-        // При смене файла обновляем переменные
         var self = this;
         select.onchange = function() {
             self.populateVariables();
-            // Обновляем секцию стилей если диалог уже открыт
             var ySelect = document.getElementById('plot-y-variables');
             if (ySelect) {
                 var selected = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
@@ -43,30 +38,24 @@ const PlotDialog = {
         };
     },
 
-    /**
-     * Открыть диалог создания нового графика.
-     */
     open: function() {
         this.currentGraphId = null;
         document.getElementById('plot-dialog-title').textContent = 'Создание графика';
 
-        this.populateFileSelect(); // ← ДОБАВЛЕНО
+        this.populateFileSelect();
         this.populateVariables();
         this.populateWindows();
 
         document.getElementById('plot-title').value = '';
         document.getElementById('plot-x-variable').value = '';
 
-        // Сбросить выделение Y
         var ySelect = document.getElementById('plot-y-variables');
         Array.from(ySelect.options).forEach(function(opt) { opt.selected = false; });
 
-        // Показать секцию стилей (пустую пока не выбраны переменные)
         this.refreshCurveStyles([]);
 
         document.getElementById('plot-dialog').style.display = 'flex';
 
-        // Слушать изменение выбора Y для обновления секции стилей
         var self = this;
         ySelect.onchange = function() {
             var selected = Array.from(ySelect.selectedOptions).map(function(o) { return o.value; });
@@ -74,9 +63,6 @@ const PlotDialog = {
         };
     },
 
-    /**
-     * Открыть диалог редактирования существующего графика.
-     */
     openEdit: function(graphId) {
         var graph = PlotManager.graphs[graphId];
         if (!graph) return;
@@ -84,7 +70,7 @@ const PlotDialog = {
         this.currentGraphId = graphId;
         document.getElementById('plot-dialog-title').textContent = 'Редактирование графика';
 
-        this.populateFileSelect(); // ← ДОБАВЛЕНО
+        this.populateFileSelect();
         this.populateVariables();
         this.populateWindows();
 
@@ -98,12 +84,10 @@ const PlotDialog = {
         document.getElementById('plot-title').value = graph.title || '';
         document.getElementById('plot-window').value = graph.windowId;
 
-        // Установить выбранный файл
         if (graph.dataset_id) {
             document.getElementById('plot-dataset-select').value = graph.dataset_id;
         }
 
-        // Показать секцию стилей с текущими настройками
         this.refreshCurveStyles(graph.yVariables, graph);
 
         document.getElementById('plot-dialog').style.display = 'flex';
@@ -115,17 +99,11 @@ const PlotDialog = {
         };
     },
 
-    /**
-     * Закрыть диалог.
-     */
     close: function() {
         document.getElementById('plot-dialog').style.display = 'none';
         this.currentGraphId = null;
     },
 
-    /**
-     * Заполнить выпадающие списки переменных.
-     */
     populateVariables: function() {
         var xSelect = document.getElementById('plot-x-variable');
         var ySelect = document.getElementById('plot-y-variables');
@@ -133,12 +111,10 @@ const PlotDialog = {
         xSelect.innerHTML = '';
         ySelect.innerHTML = '';
 
-        // Получаем ID выбранного файла
         var datasetSelect = document.getElementById('plot-dataset-select');
         var datasetId = datasetSelect ? datasetSelect.value : window.activeDatasetId;
         var dataset = window.datasets[datasetId];
 
-        // Если файла нет — используем старый метод для совместимости
         var columns = dataset ? dataset.column_names : window.currentDatasetColumns;
         
         if (!columns || columns.length === 0) {
@@ -153,9 +129,6 @@ const PlotDialog = {
         });
     },
 
-    /**
-     * Заполнить список окон.
-     */
     populateWindows: function() {
         var windowSelect = document.getElementById('plot-window');
         windowSelect.innerHTML = '<option value="auto">Автоматически (первое свободное)</option>';
@@ -168,9 +141,6 @@ const PlotDialog = {
         });
     },
 
-    /**
-     * Обновить секцию настройки стилей кривых.
-     */
     refreshCurveStyles: function(variables, graph) {
         var section = document.getElementById('curve-colors-section');
         var container = document.getElementById('curve-colors-container');
@@ -205,10 +175,8 @@ const PlotDialog = {
             row.innerHTML =
                 '<div style="font-size: 13px; font-weight: bold; color: var(--text-primary, #ccc); margin-bottom: 8px;">' + varName + '</div>' +
                 '<div style="display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 10px; align-items: center;">' +
-
                     '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Цвет:</label>' +
                     '<input type="color" data-var="' + varName + '" data-type="color" value="' + color + '" style="width: 100%; height: 26px; border: none; cursor: pointer; border-radius: 3px;">' +
-
                     '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Стиль:</label>' +
                     '<select data-var="' + varName + '" data-type="lineStyle" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
                         '<option value="solid"' + (ls === 'solid' ? ' selected' : '') + '>Сплошная ──</option>' +
@@ -216,10 +184,8 @@ const PlotDialog = {
                         '<option value="dot"' + (ls === 'dot' ? ' selected' : '') + '>Точки ···</option>' +
                         '<option value="dashdot"' + (ls === 'dashdot' ? ' selected' : '') + '>Штрих-пунктир ·─</option>' +
                     '</select>' +
-
                     '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Толщина:</label>' +
                     '<input type="number" data-var="' + varName + '" data-type="lineWidth" value="' + lw + '" min="0.5" max="10" step="0.5" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
-
                     '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Маркер:</label>' +
                     '<select data-var="' + varName + '" data-type="markerSymbol" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
                         '<option value="none"' + (ms === 'none' ? ' selected' : '') + '>Нет</option>' +
@@ -230,22 +196,16 @@ const PlotDialog = {
                         '<option value="cross"' + (ms === 'cross' ? ' selected' : '') + '>✕ Крест</option>' +
                         '<option value="x"' + (ms === 'x' ? ' selected' : '') + '>✗ Икс</option>' +
                     '</select>' +
-
                     '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Размер:</label>' +
                     '<input type="number" data-var="' + varName + '" data-type="markerSize" value="' + msz + '" min="2" max="20" step="1" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
-
                     '<label style="font-size: 11px; color: var(--text-secondary, #858585);">Каждый N-й:</label>' +
                     '<input type="number" data-var="' + varName + '" data-type="markerStep" value="' + mst + '" min="1" max="100" step="1" title="Показывать маркер через каждые N точек" style="padding: 3px; background: var(--bg-input, #3c3c3c); color: var(--text-primary, #ccc); border: 1px solid var(--border-color, #3c3c3c); border-radius: 3px; font-size: 11px;">' +
-
                 '</div>';
 
             container.appendChild(row);
         });
     },
 
-    /**
-     * Собрать все настройки из формы.
-     */
     collectStyles: function() {
         var curveColors = {};
         var lineStyles = {};
@@ -279,11 +239,7 @@ const PlotDialog = {
         };
     },
 
-    /**
-     * Создать или обновить график.
-     */
     create: function() {
-        // ← ДОБАВЛЕНО: Получаем ID выбранного файла
         var datasetSelect = document.getElementById('plot-dataset-select');
         var datasetId = datasetSelect ? datasetSelect.value : window.activeDatasetId;
 
@@ -311,6 +267,7 @@ const PlotDialog = {
                 yVariables: yVariables,
                 title: title,
                 windowId: targetWindow,
+                dataset_id: datasetId, // ← ДОБАВЛЕНО: передача ID файла при редактировании
                 curveColors: styles.curveColors,
                 lineStyles: styles.lineStyles,
                 lineWidths: styles.lineWidths,
@@ -323,7 +280,7 @@ const PlotDialog = {
                 xVariable, yVariables, title, targetWindow,
                 styles.curveColors, styles.lineStyles, styles.lineWidths,
                 styles.markerSymbols, styles.markerSizes, styles.markerSteps,
-                datasetId // ← ДОБАВЛЕНО: передаем ID файла
+                datasetId
             );
         }
 
