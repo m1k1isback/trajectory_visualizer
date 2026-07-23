@@ -55,6 +55,32 @@
         </div>
         
         <div class="menu-dropdown">
+            <button class="toolbar-btn">Вид</button>
+            <div class="dropdown-content" id="view-menu-content">
+                <label class="dropdown-item" style="cursor: pointer; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="view-win-1" checked onchange="WindowManager.toggleWindow('1')"> 
+                    <span>График 1</span>
+                </label>
+                <label class="dropdown-item" style="cursor: pointer; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="view-win-2" checked onchange="WindowManager.toggleWindow('2')"> 
+                    <span>График 2</span>
+                </label>
+                <label class="dropdown-item" style="cursor: pointer; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="view-win-3" checked onchange="WindowManager.toggleWindow('3')"> 
+                    <span>График 3</span>
+                </label>
+                <label class="dropdown-item" style="cursor: pointer; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="view-win-cesium" checked onchange="WindowManager.toggleWindow('cesium')"> 
+                    <span>Модель Земли</span>
+                </label>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" onclick="WindowManager.showAllWindows(); return false;" style="font-weight: bold;">
+                    <span>👁 Показать все окна</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="menu-dropdown">
             <button class="toolbar-btn">Помощь</button>
             <div class="dropdown-content">
                 <a href="#" class="dropdown-item" onclick="AboutDialog.open(); return false;">
