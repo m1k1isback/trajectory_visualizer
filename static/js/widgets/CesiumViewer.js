@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * CesiumViewer.js — ОФФЛАЙН версия с tooltip и выбором цвета
+ * CesiumViewer.js — ОФФЛАЙН версия с tooltip для каждой точки траектории
  * ============================================================================
  */
 
@@ -38,7 +38,6 @@ const CesiumViewer = {
         console.log('[CesiumViewer] Cesium загружен');
 
         try {
-            // Создаём Viewer
             this.viewer = new Cesium.Viewer(this.containerId, {
                 animation: false,
                 timeline: false,
@@ -61,7 +60,6 @@ const CesiumViewer = {
 
             console.log('[CesiumViewer] Viewer создан');
 
-            // Добавляем текстуру Земли
             var earthProvider = new Cesium.SingleTileImageryProvider({
                 url: '/static/images/earth_texture.jpg',
                 rectangle: Cesium.Rectangle.fromDegrees(-180, -90, 180, 90)
@@ -70,16 +68,10 @@ const CesiumViewer = {
             this.viewer.imageryLayers.addImageryProvider(earthProvider);
             console.log('[CesiumViewer] Текстура Земли добавлена');
 
-            // Настраиваем сцену
             this.configureViewer();
-            
-            // Добавляем tooltip
             this.setupTooltip();
-            
-            // Добавляем выбор цвета
             this.setupColorPicker();
 
-            // Фиксируем высоту
             container.style.height = '100%';
             container.style.overflow = 'hidden';
             container.style.position = 'relative';
@@ -99,9 +91,6 @@ const CesiumViewer = {
         }
     },
 
-    /**
-     * Настроить внешний вид Viewer.
-     */
     configureViewer: function() {
         var scene = this.viewer.scene;
         var globe = scene.globe;
@@ -109,41 +98,34 @@ const CesiumViewer = {
 
         console.log('[CesiumViewer] Настраиваю сцену и управление...');
 
-        // Отключаем лишнее
         if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
         if (scene.fog) scene.fog.enabled = false;
         if (scene.sun) scene.sun.show = false;
         if (scene.moon) scene.moon.show = false;
         if (scene.skyBox) scene.skyBox.show = false;
 
-        // Настраиваем глобус
         if (globe) {
             globe.show = true;
             globe.showGroundAtmosphere = false;
             globe.enableLighting = false;
         }
 
-        // === ВАЖНО: ВКЛЮЧАЕМ УПРАВЛЕНИЕ ===
         var controller = scene.screenSpaceCameraController;
         
-        // Включаем ВСЕ виды управления
         controller.enableRotate = true;
         controller.enableZoom = true;
         controller.enableTilt = true;
         controller.enableLook = true;
         controller.enableTranslate = true;
         
-        // Чувствительность
         controller.zoomFactor = 0.5;
         controller.inertiaSpin = 0.0;
         controller.inertiaTranslate = 0.0;
         controller.inertiaZoom = 0.0;
         
-        // Расстояния
         controller.minimumZoomDistance = 65000;
         controller.maximumZoomDistance = 50000000;
 
-        // Устанавливаем камеру
         camera.setView({
             destination: Cesium.Cartesian3.fromDegrees(0, 0, 25000000),
             orientation: {
@@ -153,7 +135,6 @@ const CesiumViewer = {
             }
         });
 
-        // Добавляем кнопки
         this.addControlButtons();
 
         console.log('[CesiumViewer] Управление включено:', {
@@ -162,95 +143,107 @@ const CesiumViewer = {
             tilt: controller.enableTilt
         });
 
-        // Обработчик размера
         window.addEventListener('resize', function() {
             if (this.viewer) this.viewer.resize();
         }.bind(this));
     },
 
-        /**
-     * Настроить tooltip при наведении.
+    /**
+     * Настроить tooltip с информацией о каждой точке траектории.
      */
     setupTooltip: function() {
         if (!this.viewer) return;
 
-        const handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
-        const tooltip = document.createElement('div');
+        var handler = new Cesium.ScreenSpaceEventHandler(this.viewer.scene.canvas);
+        var tooltip = document.createElement('div');
         tooltip.id = 'cesium-tooltip';
-        tooltip.style.cssText = `
-            position: absolute;
-            background: rgba(0, 0, 0, 0.85);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            pointer-events: none;
-            z-index: 10000;
-            display: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-        `;
+        tooltip.style.cssText = 'position: absolute; background: rgba(0, 0, 0, 0.9); color: white; padding: 10px 14px; border-radius: 6px; font-size: 11px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; pointer-events: none; z-index: 10000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); max-width: 280px; line-height: 1.5;';
         document.body.appendChild(tooltip);
 
-        let hoveredEntity = null;
+        var hoveredPoint = null;
+        var self = this;
 
         handler.setInputAction(function(movement) {
-            const pickedObjects = this.viewer.scene.drillPick(movement.endPosition);
-            let foundTrajectory = null;
+            var pickedObjects = self.viewer.scene.drillPick(movement.endPosition);
+            var foundPoint = null;
 
             if (pickedObjects && pickedObjects.length > 0) {
-                for (let i = 0; i < pickedObjects.length; i++) {
-                    const primitive = pickedObjects[i].primitive;
-                    const entity = pickedObjects[i].id;
+                for (var i = 0; i < pickedObjects.length; i++) {
+                    var entity = pickedObjects[i].id;
                     
-                    if (entity && entity.trajectoryData) {
-                        foundTrajectory = entity;
-                        break;
-                    }
-                    if (primitive && primitive.id && primitive.id.trajectoryData) {
-                        foundTrajectory = primitive.id;
+                    // Ищем точку с pointData (конкретная точка траектории)
+                    if (entity && entity.pointData) {
+                        foundPoint = entity;
                         break;
                     }
                 }
             }
 
-            // === ИСПРАВЛЕНИЕ: Получаем позицию канваса ===
-            const canvas = this.viewer.scene.canvas;
-            const canvasRect = canvas.getBoundingClientRect();
+            var canvas = self.viewer.scene.canvas;
+            var canvasRect = canvas.getBoundingClientRect();
             
-            if (foundTrajectory && foundTrajectory !== hoveredEntity) {
-                hoveredEntity = foundTrajectory;
-                const data = foundTrajectory.trajectoryData;
+            if (foundPoint && foundPoint !== hoveredPoint) {
+                hoveredPoint = foundPoint;
+                var pointData = foundPoint.pointData;
                 
-                tooltip.innerHTML = '<strong>' + (data.fileName || 'Траектория') + '</strong><br>' +
-                                   'Точек: ' + (data.pointCount || 0);
+                // Формируем содержимое tooltip
+                var html = '<div style="font-weight: bold; font-size: 12px; margin-bottom: 6px; color: #4ec9b0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 4px;">';
+                html += pointData.fileName || 'Траектория';
+                html += '</div>';
+                
+                html += '<div style="margin-bottom: 4px;"><span style="color: #858585;">Точка #</span>' + (pointData.index + 1) + ' из ' + pointData.totalPoints + '</div>';
+                
+                // Координаты
+                html += '<div style="margin-top: 8px;">';
+                html += '<div><span style="color: #569cd6;">X:</span> ' + self.formatNumber(pointData.x) + ' м</div>';
+                html += '<div><span style="color: #569cd6;">Y:</span> ' + self.formatNumber(pointData.y) + ' м</div>';
+                html += '<div><span style="color: #569cd6;">Z:</span> ' + self.formatNumber(pointData.z) + ' м</div>';
+                html += '</div>';
+                
+                // Если есть дополнительные данные (скорость, время)
+                if (pointData.vx !== undefined) {
+                    html += '<div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.1);">';
+                    html += '<div><span style="color: #ce9178;">Vx:</span> ' + self.formatNumber(pointData.vx) + ' м/с</div>';
+                    if (pointData.vy !== undefined) {
+                        html += '<div><span style="color: #ce9178;">Vy:</span> ' + self.formatNumber(pointData.vy) + ' м/с</div>';
+                    }
+                    if (pointData.vz !== undefined) {
+                        html += '<div><span style="color: #ce9178;">Vz:</span> ' + self.formatNumber(pointData.vz) + ' м/с</div>';
+                    }
+                    html += '</div>';
+                }
+                
+                tooltip.innerHTML = html;
                 tooltip.style.display = 'block';
-                // === ИСПРАВЛЕНИЕ: Позиционируем относительно документа ===
                 tooltip.style.left = (movement.endPosition.x + canvasRect.left + 15) + 'px';
                 tooltip.style.top = (movement.endPosition.y + canvasRect.top + 15) + 'px';
-            } else if (!foundTrajectory && hoveredEntity) {
-                hoveredEntity = null;
+                
+            } else if (!foundPoint && hoveredPoint) {
+                hoveredPoint = null;
                 tooltip.style.display = 'none';
-            } else if (hoveredEntity) {
-                // === ИСПРАВЛЕНИЕ: Обновляем позицию при движении мыши ===
+            } else if (hoveredPoint) {
                 tooltip.style.left = (movement.endPosition.x + canvasRect.left + 15) + 'px';
                 tooltip.style.top = (movement.endPosition.y + canvasRect.top + 15) + 'px';
             }
 
-        }.bind(this), Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
         handler.setInputAction(function() {
             tooltip.style.display = 'none';
-            hoveredEntity = null;
+            hoveredPoint = null;
         }, Cesium.ScreenSpaceEventType.MOUSE_LEAVE);
 
-        console.log('[CesiumViewer] Tooltip настроен');
+        console.log('[CesiumViewer] Tooltip с данными точек настроен');
     },
 
     /**
-     * Настроить контекстное меню для изменения цвета.
+     * Форматировать число для отображения (разделение тысяч).
      */
+    formatNumber: function(num) {
+        if (num === null || num === undefined) return 'N/A';
+        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    },
+
     setupColorPicker: function() {
         if (!this.viewer) return;
 
@@ -268,7 +261,6 @@ const CesiumViewer = {
         var selectedEntity = null;
         var self = this;
 
-        // Правый клик
         handler.setInputAction(function(movement) {
             var pickedObjects = self.viewer.scene.drillPick(movement.position);
             var foundTrajectory = null;
@@ -286,12 +278,10 @@ const CesiumViewer = {
             if (foundTrajectory) {
                 selectedEntity = foundTrajectory;
                 
-                // Показываем палитру
                 colorPicker.style.display = 'block';
                 colorPicker.style.left = movement.position.x + 'px';
                 colorPicker.style.top = movement.position.y + 'px';
                 
-                // Заполняем палитру
                 var palette = document.getElementById('color-palette');
                 var colors = ['#4ec9b0', '#569cd6', '#ce9178', '#c586c0', '#dcdcaa', 
                              '#f44747', '#9cdcfe', '#d4d4d4', '#b5cea8', '#d16969',
@@ -317,7 +307,6 @@ const CesiumViewer = {
                     palette.appendChild(btn);
                 });
                 
-                // Кастомный цвет
                 var customInput = document.getElementById('custom-color');
                 var timeout;
                 customInput.oninput = function() {
@@ -344,7 +333,6 @@ const CesiumViewer = {
 
         }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
 
-        // Скрыть при левом клике вне палитры
         handler.setInputAction(function() {
             colorPicker.style.display = 'none';
             selectedEntity = null;
@@ -353,24 +341,18 @@ const CesiumViewer = {
         console.log('[CesiumViewer] Контекстное меню цвета настроено');
     },
 
-    /**
-     * Изменить цвет траектории.
-     */
     changeTrajectoryColor: function(entity, colorHex) {
         if (!entity) return;
         
         var cesiumColor = Cesium.Color.fromCssColorString(colorHex);
         var datasetId = entity.trajectoryData.datasetId;
         
-        // Сохраняем цвет
         this.trajectoryColors[datasetId] = cesiumColor;
         
-        // Меняем цвет polyline
         if (entity.polyline) {
             entity.polyline.material = cesiumColor;
         }
         
-        // Меняем цвет picking точек
         for (var i = 0; i < 100; i++) {
             var point = this.viewer.entities.getById('trajectory-' + datasetId + '-point-' + i);
             if (!point) break;
@@ -381,11 +363,7 @@ const CesiumViewer = {
         console.log('[CesiumViewer] Цвет траектории изменен:', datasetId, colorHex);
     },
 
-    /**
-     * Получить цвет для траектории.
-     */
     getTrajectoryColor: function(datasetId) {
-        // Используем палитру из PlotManager если есть
         var curveColors = window.CURVE_COLORS || [
             '#4ec9b0', '#569cd6', '#ce9178', '#c586c0', '#dcdcaa',
             '#f44747', '#9cdcfe', '#d4d4d4', '#b5cea8', '#d16969'
@@ -404,7 +382,7 @@ const CesiumViewer = {
         return cesiumColor;
     },
 
-    /**
+        /**
      * Загрузить траекторию из файла.
      */
     loadTrajectoryFromFile: async function(datasetId) {
@@ -424,17 +402,15 @@ const CesiumViewer = {
 
             var data = await response.json();
             console.log('[CesiumViewer] Получено точек:', data.points);
+            console.log('[CesiumViewer] Данные точек:', data.points_data);  // ← Для отладки
 
             if (data.trajectory && data.trajectory.length > 0) {
-                // Удаляем ТОЛЬКО траекторию этого файла
                 this.removeTrajectory('trajectory-' + datasetId);
 
-                // Получаем цвет
                 var color = this.getTrajectoryColor(datasetId);
                 var dataset = window.datasets[datasetId];
                 var fileName = dataset ? dataset.name : 'Траектория';
 
-                // Создаем polyline
                 var entity = this.viewer.entities.add({
                     id: 'trajectory-' + datasetId,
                     trajectoryData: {
@@ -452,32 +428,46 @@ const CesiumViewer = {
                     }
                 });
 
-                // Добавляем невидимые точки для picking (каждую 5-ю точку)
+                // === ИСПРАВЛЕНО: Получаем полные данные точек ===
+                var pointsData = data.points_data || [];
+                console.log('[CesiumViewer] Points data length:', pointsData.length);
+
+                // Добавляем ВИДИМЫЕ точки для picking с данными
                 var step = Math.max(1, Math.floor(data.trajectory.length / 50));
                 var self = this;
                 
                 for (var i = 0; i < data.trajectory.length; i += step) {
                     var pos = data.trajectory[i];
+                    var fullPointData = pointsData[i] || {};
+                    
+                    console.log('[CesiumViewer] Точка #' + i + ' vx:', fullPointData.vx);
+                    
                     this.viewer.entities.add({
                         id: 'trajectory-' + datasetId + '-point-' + i,
                         position: new Cesium.Cartesian3(pos.x, pos.y, pos.z),
                         point: {
-                            pixelSize: 1,  // Очень маленький размер
-                            color: Cesium.Color.TRANSPARENT,
-                            outlineColor: Cesium.Color.TRANSPARENT,
-                            outlineWidth: 0,
-                            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-                            show: false  // Полностью скрыть
+                            pixelSize: 8,
+                            color: Cesium.Color.fromAlpha(color, 0.6),
+                            outlineColor: Cesium.Color.WHITE,
+                            outlineWidth: 2,
+                            disableDepthTestDistance: Number.POSITIVE_INFINITY
                         },
-                        trajectoryData: {
+                        pointData: {
                             fileName: fileName,
-                            pointCount: data.points,
-                            datasetId: datasetId
+                            index: i,
+                            totalPoints: data.trajectory.length,
+                            x: pos.x,
+                            y: pos.y,
+                            z: pos.z,
+                            // ← Используем данные из API
+                            vx: fullPointData.vx !== undefined ? fullPointData.vx : null,
+                            vy: fullPointData.vy !== undefined ? fullPointData.vy : null,
+                            vz: fullPointData.vz !== undefined ? fullPointData.vz : null,
+                            t: fullPointData.t !== undefined ? fullPointData.t : null
                         }
                     });
                 }
 
-                // Зум на траекторию
                 setTimeout(function() {
                     this.viewer.zoomTo(entity);
                 }.bind(this), 300);
@@ -494,19 +484,14 @@ const CesiumViewer = {
         }
     },
 
-    /**
-     * Удалить траекторию.
-     */
     removeTrajectory: function(trajectoryId) {
         if (!this.viewer) return;
         
-        // Удаляем основную траекторию
         var entity = this.viewer.entities.getById(trajectoryId);
         if (entity) {
             this.viewer.entities.remove(entity);
         }
 
-        // Удаляем picking точки
         var i = 0;
         while (true) {
             var point = this.viewer.entities.getById(trajectoryId + '-point-' + i);
@@ -518,17 +503,11 @@ const CesiumViewer = {
         console.log('[CesiumViewer] Траектория удалена:', trajectoryId);
     },
 
-    /**
-     * Очистить траектории.
-     */
     clearTrajectories: function() {
         if (!this.viewer) return;
         this.viewer.entities.removeAll();
     },
 
-    /**
-     * Добавить кнопки управления.
-     */
     addControlButtons: function() {
         var container = document.getElementById(this.containerId);
         if (!container) return;
@@ -543,7 +522,7 @@ const CesiumViewer = {
             'pointer-events: none;';
 
         var buttons = [
-            { icon: '', title: 'Домой', action: function() { this.goHome(); }.bind(this) },
+            { icon: '🏠', title: 'Домой', action: function() { this.goHome(); }.bind(this) },
             { icon: '+', title: 'Приблизить', action: function() { this.zoomIn(); }.bind(this) },
             { icon: '🔍-', title: 'Отдалить', action: function() { this.zoomOut(); }.bind(this) },
         ];
